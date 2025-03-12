@@ -1,0 +1,57 @@
+@import '../../../variables';
+
+.chat-container {
+  background: white;
+  padding: 20px;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.message-box {
+  flex-grow: 1;
+  height: 300px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  overflow-y: auto;
+  background: #fafafa;
+
+  &-mine {
+    text-align: right;
+    background: rgba(176, 176, 176, 0.38);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  &-others {
+    text-align: left;
+    background: white;
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+}
+
+.message-input {
+  width: calc(100% - 22px);
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.send-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.send-btn:hover {
+  background: #0056b3;
+}

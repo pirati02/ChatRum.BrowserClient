@@ -1,0 +1,23 @@
+<div class="tab-list-footer-page">
+  <div class="header">მომხმარებლები</div>
+  <div class="artists-list d-flex full-width full-height flex-column">
+    <div class="d-flex flex-column full-width full-height">
+      <div class="d-flex flex-row" style="padding: 2rem">
+        <mat-select (selectionChange)="senderSelected($event)">
+          <mat-option *ngFor="let account of accounts" [value]="account">
+            {{ account.userName }}
+          </mat-option>
+        </mat-select>
+        <mat-select (selectionChange)="receiverSelected($event)">
+          <mat-option *ngFor="let account of accounts" [value]="account">
+            {{ account.userName }}
+          </mat-option>
+        </mat-select>
+      </div>
+
+      <span>{{sender?.userName}}</span>
+      <span>{{receiver?.userName}}</span>
+      <button class="send-btn" [disabled]="!(sender && receiver)" (click)="selectParticipants()">Send</button>
+    </div>
+  </div>
+</div>
