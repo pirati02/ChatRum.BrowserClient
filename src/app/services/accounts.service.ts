@@ -18,4 +18,9 @@ export class AccountsService{
     return this.httpClient
       .get<UiAccount[]>(this.baseUrl)
   }
+
+  loadAccount(id: string) {
+    return this.httpClient
+      .get<UiAccount>(this.baseUrl + '/' + id)
+  }
 }

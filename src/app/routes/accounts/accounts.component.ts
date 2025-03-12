@@ -53,4 +53,8 @@ export class AccountsComponent implements OnInit {
   senderSelected($event: MatSelectChange) {
     this.sender = $event.value;
   }
+
+  openAccountDetails(accountId: string, account2: string) {
+    this.router.navigate([`account-info/${accountId}/${account2}`]).then();
+  }
 }

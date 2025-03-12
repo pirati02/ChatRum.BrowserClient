@@ -71,29 +71,33 @@ export class ConversationComponent implements OnInit, OnDestroy {
           }
         }),
         catchError(error => {
+          console.error(error);
           return of(null);
         }),
         finalize(() => {
-          this.conversationService.startConnection(this.conversation.conversationId!)
+          this.conversationService.startConnection(this.sender?.id!, this.conversation.conversationId!)
         })
       )
       .subscribe();
-
-    this.conversationService.conversationAppendMessage$.subscribe(message => {
-      if (message) {
-        this.conversationService.updateMessageStatus(message, MessageStatus.Seen);
-        message!.statusString = this.statusString(message?.status);
-        this.conversation.messages.push(message);
-        this.scrollElement!.nativeElement.scrollTop = this.scrollElement!.nativeElement.scrollHeight;
-      }
-    });
 
     this.conversationService.updateMessageState$.subscribe((res) => {
       if (res?.messageId) {
         const message = this.conversation.messages.find(item => item.messageId === res?.messageId);
         message!.statusString = this.statusString(res?.status);
+        message!.status = res?.status;
       }
-    })
+    });
+
+    this.conversationService.conversationAppendMessage$.subscribe((result) => {
+      if (result?.message) {
+        result!.message!.statusString = this.statusString(result!.message?.status);
+        this.conversation.messages.push(result!.message);
+        this.scrollElement!.nativeElement.scrollTop = this.scrollElement!.nativeElement.scrollHeight;
+        if (result?.update === true){
+          this.conversationService.updateMessageStatus(result!.message, MessageStatus.Seen);
+        }
+      }
+    });
   }
 
   ngOnDestroy() {

@@ -11,6 +11,7 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {ReactiveFormsModule} from "@angular/forms";
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {MatOption, MatSelect} from "@angular/material/select";
+import {AccountInfoComponent} from "./routes/account-info/account-info.component";
 
 
 @NgModule({
@@ -19,7 +20,8 @@ import {MatOption, MatSelect} from "@angular/material/select";
   ],
   declarations: [
     ConversationComponent,
-    AccountsComponent
+    AccountsComponent,
+    AccountInfoComponent
   ],
   imports: [
     CommonModule,

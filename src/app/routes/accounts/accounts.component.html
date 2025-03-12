@@ -17,7 +17,9 @@
 
       <span>{{sender?.userName}}</span>
       <span>{{receiver?.userName}}</span>
-      <button class="send-btn" [disabled]="!(sender && receiver)" (click)="selectParticipants()">Send</button>
+      <button class="send-btn" [disabled]="!(sender && receiver)" (click)="selectParticipants()">მიმოწერა</button>
+      <button class="send-btn" [disabled]="!(sender && receiver)" (click)="openAccountDetails(sender?.id!, receiver?.id!)">გამგზავნის დეტალები</button>
+      <button class="send-btn" [disabled]="!(sender && receiver)" (click)="openAccountDetails(receiver?.id!, sender?.id!)">მიმღების დეტალები</button>
     </div>
   </div>
 </div>
