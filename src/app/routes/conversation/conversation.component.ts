@@ -1,4 +1,13 @@
-import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from "@angular/core";
+import {
+  AfterViewChecked,
+  AfterViewInit,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ConversationService} from "../../services/conversation.service";
 import {catchError, finalize, of, tap} from "rxjs";
@@ -19,9 +28,9 @@ export interface UiMessage extends MessageResponse {
   templateUrl: './conversation.component.html',
   styleUrls: ['./conversation.component.scss']
 })
-export class ConversationComponent implements OnInit, OnDestroy {
+export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @ViewChild('scrollElement') scrollElement?: ElementRef<HTMLDivElement>;
+  @ViewChild('scrollElement') scrollContainer?: ElementRef<HTMLDivElement>;
   chatGroup$?: FormGroup<{
     messageContent: FormControl<string | null>
   }>;
@@ -35,7 +44,8 @@ export class ConversationComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
-    private conversationService: ConversationService
+    private conversationService: ConversationService,
+    private ngZone: NgZone
   ) {
   }
 
@@ -92,12 +102,16 @@ export class ConversationComponent implements OnInit, OnDestroy {
       if (result?.message) {
         result!.message!.statusString = this.statusString(result!.message?.status);
         this.conversation.messages.push(result!.message);
-        this.scrollElement!.nativeElement.scrollTop = this.scrollElement!.nativeElement.scrollHeight;
-        if (result?.update === true){
+        if (result?.update === true) {
           this.conversationService.updateMessageStatus(result!.message, MessageStatus.Seen);
         }
+        this.scrollToBottom();
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    this.scrollToBottom();
   }
 
   ngOnDestroy() {
@@ -116,7 +130,7 @@ export class ConversationComponent implements OnInit, OnDestroy {
           senderId: this.sender?.id!
         }
       )
-        .subscribe();
+        .subscribe(() => this.cleanupMessageContent());
     }
 
     this.conversationService.sendMessage(
@@ -124,8 +138,21 @@ export class ConversationComponent implements OnInit, OnDestroy {
       <MessageRequest>{
         content: content,
         senderId: this.sender?.id!
-      }).subscribe();
+      }).subscribe(() => this.cleanupMessageContent());
   }
+
+  private cleanupMessageContent() {
+    this.chatGroup$?.controls.messageContent.patchValue('');
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    this.ngZone.run(() => {
+      const scrollContainer = this.scrollContainer!.nativeElement;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    });
+  }
+
 
   private statusString(status: MessageStatus): uiStatus {
     switch (status) {
