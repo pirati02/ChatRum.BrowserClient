@@ -15,6 +15,11 @@ export var accountsBaseUrlProvider: ValueProvider = <ValueProvider> {
   useValue: 'http://localhost:5049'
 }
 
+export var friendshipBaseUrlProvider: ValueProvider = <ValueProvider> {
+  provide: 'FRIENDSHIP_BASE_URL',
+  useValue: 'http://localhost:5031'
+}
+
 export const signalUrlProvider: ValueProvider = <ValueProvider>{
   provide: 'SIGNALR_URL',
   useValue: 'http://localhost:5111/conversation'
@@ -27,6 +32,7 @@ export const appConfig: ApplicationConfig = {
     chatBaseUrlProvider,
     accountsBaseUrlProvider,
     signalUrlProvider,
+    friendshipBaseUrlProvider,
     importProvidersFrom(AppModule), provideAnimationsAsync()
   ]
 };

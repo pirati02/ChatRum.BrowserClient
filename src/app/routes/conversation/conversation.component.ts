@@ -67,7 +67,7 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
             })
           };
 
-          const unreadMessages = this.conversation.messages.filter(a => a.status === MessageStatus.Sent);
+          const unreadMessages = this.conversation.messages.filter(a => a.status === MessageStatus.Sent && a.senderId === this.receiver?.id);
           if (unreadMessages.length > 0) {
             this.conversationService.markAsRead(this.conversation.conversationId!, unreadMessages.map(item => item.messageId))
               .subscribe(res => {

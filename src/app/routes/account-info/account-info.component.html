@@ -1,22 +1,34 @@
 <div class="tab-list-footer-page">
   <div class="header">მომხმარებელი</div>
-  <div class="artists-list d-flex full-width full-height flex-column">
-    <div class="d-flex flex-column full-width full-height">
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>User name</span>
-        <span>{{ account?.userName }}</span>
+  <div class="d-flex flex-column" style="gap: 1rem">
+    <div class="artists-list d-flex flex-column">
+      <div class="d-flex flex-column">
+        <div class="d-flex flex-column" style="padding: 1rem">
+          <span>User name</span>
+          <span>{{ account?.userName }}</span>
+        </div>
+        <div class="d-flex flex-column" style="padding: 1rem">
+          <span>Email</span>
+          <span>{{ account?.email }}</span>
+        </div>
+        <div class="d-flex flex-column" style="padding: 1rem">
+          <span>First name</span>
+          <span>{{ account?.firstName }}</span>
+        </div>
+        <div class="d-flex flex-column" style="padding: 1rem">
+          <span>Last name</span>
+          <span>{{ account?.lastName }}</span>
+        </div>
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Email</span>
-        <span>{{ account?.email }}</span>
-      </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>First name</span>
-        <span>{{ account?.firstName }}</span>
-      </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Last name</span>
-        <span>{{ account?.lastName }}</span>
+    </div>
+    <mat-divider [vertical]="false"></mat-divider>
+    <div class="d-flex flex-row" style="gap: 1rem;">
+      <div class="card" *ngFor="let friend of friends" (click)="selectParticipants(friend)">
+        <div class="card-body">
+          <h3 class="card-title">{{friend.userName}}</h3>
+          <p class="card-text" style="opacity: 0.6;">{{latestMessage(account?.id!)}}</p>
+          <button class="card-btn">Open Conversation</button>
+        </div>
       </div>
     </div>
   </div>

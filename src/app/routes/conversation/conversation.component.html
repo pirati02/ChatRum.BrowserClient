@@ -1,21 +1,25 @@
 <div class="tab-list-footer-page">
   <div class="header">ჩატი</div>
-
   <form [formGroup]="chatGroup$!">
     <div class="artists-list d-flex full-width full-height flex-column">
       <div class="d-flex flex-column full-width full-height">
         <div class="chat-container d-flex flex-column list-scroll-behavior" #scrollElement>
           <div class="message-box" id="messageBox">
             <ng-container *ngFor="let message of conversation.messages" class="message-item">
-              <div class="d-flex flex-column" style="margin: 1.5rem" [ngClass]="
-              {
-                'message-box-mine': this.sender?.id! === message.senderId,
-                'message-box-others': this.receiver?.id! === message.senderId
-              }">
-                <span style="font-size: 1.2em">{{ message.content }}</span>
-                <span style="font-size: 0.8em"
-                      *ngIf="this.sender?.id! === message.senderId">{{ message.statusString }}</span>
-              </div>
+              <ng-container
+                [ngTemplateOutlet]="receiverTemplate"
+                [ngTemplateOutletContext]="{
+                  account: this.receiver,
+                  message: message
+                }"
+                *ngIf="message.senderId === this.receiver?.id"></ng-container>
+              <ng-container
+                [ngTemplateOutlet]="senderTemplate"
+                [ngTemplateOutletContext]="{
+                  account: this.sender,
+                  message: message
+                }"
+                *ngIf="message.senderId === this.sender?.id"></ng-container>
             </ng-container>
           </div>
         </div>
@@ -25,3 +29,19 @@
     </div>
   </form>
 </div>
+
+<ng-template #senderTemplate let-account="account" let-message="message">
+  <div class="d-flex flex-column message-box-mine" style="margin: 1.5rem">
+    <span style="font-size: 0.6em; margin-bottom: 1rem">you</span>
+    <span style="font-size: 1.2em">{{ message.content }}</span>
+    <span style="font-size: 0.8em">{{ message.statusString }}</span>
+  </div>
+</ng-template>
+
+
+<ng-template #receiverTemplate let-account="account" let-message="message">
+  <div class="d-flex flex-column message-box-others" style="margin: 1.5rem">
+    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ this.account?.userName }}</span>
+    <span style="font-size: 1.2em">{{ message.content }}</span>
+  </div>
+</ng-template>

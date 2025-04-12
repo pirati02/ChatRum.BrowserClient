@@ -12,7 +12,7 @@ export const routes: Routes = [
   },
   {
     title: 'მომხმარებელი',
-    path: 'account-info/:accountId/:accountId2',
+    path: 'account-info/:accountId',
     component: AccountInfoComponent
   },
   {

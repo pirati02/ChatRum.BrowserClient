@@ -1,9 +1,8 @@
-import {Component, OnInit} from "@angular/core";
+import {ChangeDetectionStrategy, Component, OnInit} from "@angular/core";
 import {AccountsService} from "../../services/accounts.service";
 import {tap} from "rxjs";
 import {AccountResponse} from "../../models/account.response";
 import {Router} from "@angular/router";
-import {MatOptionSelectionChange} from "@angular/material/core";
 import {MatSelectChange} from "@angular/material/select";
 
 export interface UiAccount extends AccountResponse {
@@ -18,7 +17,7 @@ export interface UiAccount extends AccountResponse {
 export class AccountsComponent implements OnInit {
 
   protected accounts: UiAccount[] = [];
-  receiver?: UiAccount;
+  protected filteredAccounts: UiAccount[] = [];
   sender?: UiAccount;
 
   constructor(
@@ -37,24 +36,14 @@ export class AccountsComponent implements OnInit {
       .subscribe()
   }
 
-  selectParticipants() {
-    this.router.navigate(['conversation'], {
-      queryParams: {
-        receiver: JSON.stringify(this.receiver),
-        sender: JSON.stringify(this.sender)
-      }
-    }).then();
-  }
-
-  receiverSelected($event: MatSelectChange) {
-    this.receiver = $event.value;
-  }
-
   senderSelected($event: MatSelectChange) {
     this.sender = $event.value;
+    this.filteredAccounts = this.accounts.filter(account => {
+      return account.id !== $event.value.id;
+    })
   }
 
-  openAccountDetails(accountId: string, account2: string) {
-    this.router.navigate([`account-info/${accountId}/${account2}`]).then();
+  openAccountDetails(accountId: string) {
+    this.router.navigate([`account-info/${accountId}`]).then();
   }
 }

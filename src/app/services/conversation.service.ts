@@ -1,4 +1,4 @@
-import {HttpClient} from "@angular/common/http";
+import {HttpClient, HttpParams} from "@angular/common/http";
 import {Inject, Injectable} from "@angular/core";
 import {BehaviorSubject, Observable, of} from "rxjs";
 import * as signalR from "@microsoft/signalr";
@@ -7,6 +7,8 @@ import {MessageRequest} from "../models/message.request";
 import {fromPromise} from "rxjs/internal/observable/innerFrom";
 import {MessageStatus} from "../models/message.status";
 import {UiMessage} from "../routes/conversation/conversation.component";
+import {ConversationResponse} from "../models/conversation.response";
+import {LastConversationResponse} from "../models/last-conversation.response";
 
 @Injectable({
   providedIn: 'root'
@@ -91,16 +93,23 @@ export class ConversationService {
     return of(null);
   }
 
-  findConversation(me: string, participantId: string) {
+  findConversation(me: string, participantId: string): Observable<ConversationResponse> {
     return this.httpClient
-      .get<{
-        conversationId: string;
-        messages: UiMessage[]
-      }>(this.baseUrl + `/existing/${me}/${participantId}`)
+      .get<ConversationResponse>(this.baseUrl + `/existing/${me}/${participantId}`)
   }
 
   markAsRead(conversationId: string, messageIds: string[]) {
     return this.httpClient
       .post<boolean>(this.baseUrl + `/mark-as-read/${conversationId}`, messageIds);
+  }
+
+  findTop10Conversation(accountId: string, friendIds: string[]): Observable<LastConversationResponse[]> {
+    let params = new HttpParams();
+    friendIds.forEach(id => {
+      params = params.append('ids', id);
+    });
+    return this.httpClient.get<LastConversationResponse[]>(this.baseUrl + `/${accountId}/top10`, {
+      params: params
+    })
   }
 }
