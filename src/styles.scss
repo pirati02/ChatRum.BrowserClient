@@ -84,20 +84,12 @@ body {
 }
 
 
-mat-divider {
-  width: 100%;
-  min-height: 5px;
+.border {
+  border: 1px solid #dee2e6 !important;
 }
 
-.list {
-  .list-item {
-    padding: 15px 0;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 18px;
-    color: #000;
-    cursor: pointer;
-    user-select: none;
-  }
+.rounded {
+  border-radius: 0.25rem !important;
 }
 
 .tabs-side {
@@ -169,7 +161,7 @@ mat-divider {
   }
 }
 
-@media only screen and (min-height: 1000px)  {
+@media only screen and (min-height: 1000px) {
   .tab-list-footer-page {
     grid-template-rows: 50px 80dvh 90px 40px;
   }
@@ -179,7 +171,7 @@ mat-divider {
 .card {
   max-width: 350px;
   border-radius: 16px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   background-color: #fff;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -187,7 +179,7 @@ mat-divider {
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .card-img {
@@ -225,3 +217,4 @@ mat-divider {
 .card-btn:hover {
   background-color: #303f9f;
 }
+

@@ -1,9 +1,9 @@
 <div class="tab-list-footer-page">
   <div class="header">მომხმარებელი</div>
   <div class="d-flex flex-column" style="gap: 1rem;">
-    <div class="d-flex flex-row full-width">
+    <div class="d-flex flex-column full-width">
       <div class="artists-list d-flex flex-column" style="flex-grow: 1">
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-row">
           <div class="d-flex flex-column" style="padding: 1rem">
             <span>User name</span>
             <span>{{ account?.userName }}</span>
@@ -22,35 +22,35 @@
           </div>
         </div>
       </div>
-      <div class="d-flex flex-column" style="flex-grow: 1">
+      <div class="d-flex flex-column" style="flex-grow: 1" *ngIf="friends.length > 0">
         <span>მეგობრები</span>
         <div class="card" *ngFor="let friend of friends">
           <div class="card-body">
             <h3 class="card-title">{{ friend.userName }}</h3>
-            <p class="card-text" style="opacity: 0.6;">{{ latestMessage(account?.id!) }}</p>
-            <button class="card-btn" (click)="selectParticipants(friend)">მიმოწერის გახსნა</button>
-            <button class="card-btn" (click)="unfriend(friend)">მეგობრობის გაუქმება</button>
+            <p class="card-text" style="opacity: 0.6;">{{ friend.conversation?.message?.content?.substring(0, 15) }}</p>
+            <button class="card-btn" (click)="selectParticipants(friend)">💬</button>
+            <button class="card-btn" (click)="unfriend(friend)">🚫</button>
           </div>
         </div>
       </div>
     </div>
     <mat-divider [vertical]="false"></mat-divider>
     <div class="d-flex flex-row" style="gap: 1rem;">
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column" *ngIf="receivedFriendRequests.length > 0">
         <span>მეგრობრის დამატების მოთხოვნები</span>
-        <div class="card" *ngFor="let friendRequest of friendRequests">
+        <div class="card" *ngFor="let friendRequest of receivedFriendRequests">
           <div class="card-body">
             <h3 class="card-title">{{ friendRequest.userName }}</h3>
-            <button class="card-btn" (click)="acceptFriend(friendRequest)">მეგობრობის დასტური</button>
+            <button class="card-btn" (click)="acceptFriend(friendRequest)">✅</button>
           </div>
         </div>
       </div>
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column" *ngIf="randomAccounts.length > 0">
         <span>სხვა მომხმარებლები</span>
-        <div class="card" *ngFor="let account of accountsFiltered">
+        <div class="card" *ngFor="let account of randomAccounts">
           <div class="card-body">
             <h3 class="card-title">{{ account.userName }}</h3>
-            <button class="card-btn" (click)="sendFriendRequest(account)">მეგობრობის გაგზავნა</button>
+            <button class="card-btn" (click)="sendFriendRequest(account)">🙋‍♂️</button>
           </div>
         </div>
       </div>

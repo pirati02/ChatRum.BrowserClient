@@ -1,6 +1,6 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit} from "@angular/core";
+import {Component, OnInit} from "@angular/core";
 import {AccountsService} from "../../services/accounts.service";
-import {catchError, finalize, forkJoin, mergeMap, of, tap} from "rxjs";
+import {finalize, forkJoin, mergeMap, tap} from "rxjs";
 import {AccountResponse} from "../../models/account.response";
 import {ActivatedRoute, Router} from "@angular/router";
 import {ConversationService} from "../../services/conversation.service";
@@ -14,6 +14,10 @@ export interface UiAccount extends AccountResponse {
 
 }
 
+export interface PeerExtended extends PeerResponse {
+  conversation: LastConversationResponse
+}
+
 @Component({
   selector: 'app-account-info',
   templateUrl: './account-info.component.html',
@@ -22,12 +26,10 @@ export interface UiAccount extends AccountResponse {
 export class AccountInfoComponent implements OnInit {
 
   account?: UiAccount;
-  accounts: UiAccount[] = [];
-  accountsFiltered: UiAccount[] = [];
-  friends: PeerResponse[] = [];
-  friendRequests: PeerResponse[] = [];
-  myFriendRequests: PeerResponse[] = [];
-  conversations: LastConversationResponse[] = [];
+  randomAccounts: UiAccount[] = [];
+  friends: PeerExtended[] = [];
+  receivedFriendRequests: PeerResponse[] = [];
+  sentFriendRequests: PeerResponse[] = [];
 
   constructor(
     private accountsService: AccountsService,
@@ -45,11 +47,11 @@ export class AccountInfoComponent implements OnInit {
       this.loadAccountDetails(accountId);
     });
     this.conversationService.conversationAppendMessage$.subscribe(message => {
-      if (message){
+      if (message) {
         this.conversationService.updateMessageStatus(message?.message!, MessageStatus.Delivered);
-        const conversation = this.conversations.find(item => item.conversationId === message?.message.conversationId);
+        const conversation = this.friends.find(item => item.conversation.conversationId === message?.message.conversationId);
         if (conversation) {
-          conversation.message = <LastestMessageResponse>{
+          conversation.conversation.message = <LastestMessageResponse>{
             content: message?.message.content,
             senderId: message?.message.senderId,
             conversationId: message?.message.conversationId,
@@ -71,13 +73,13 @@ export class AccountInfoComponent implements OnInit {
       this.friendshipService.getFriendRequests(accountId)
         .pipe(
           tap(friends => {
-            this.friendRequests = friends;
+            this.receivedFriendRequests = friends;
           })
         ),
       this.friendshipService.getFriendRequestsISent(accountId)
         .pipe(
           tap(friends => {
-            this.myFriendRequests = friends;
+            this.sentFriendRequests = friends;
           })
         ),
       this.friendshipService.getFriends(accountId)
@@ -86,28 +88,31 @@ export class AccountInfoComponent implements OnInit {
             const friendIds = friends
               .filter((_, index) => index <= 10)
               .map(item => item.peerId);
-            this.friends = friends;
             return forkJoin([
               this.conversationService.findTop10Conversation(accountId, friendIds)
                 .pipe(
-                  tap(conversations => {
-                    this.conversations = conversations;
+                  mergeMap(conversations => {
                     conversations.forEach(item => {
                       this.conversationService.startConnection(this.account?.id!, item.conversationId!);
                     });
-                  })
-                ),
-              this.accountsService.loadAccounts()
-                .pipe(
-                  tap(accounts => {
-                    this.accounts = accounts;
-                    const accountsToOmit = [
-                      ...this.friends.map(account => account.peerId),
-                      ...this.friendRequests.map(peer => peer.peerId),
-                      ...this.myFriendRequests.map(peer => peer.peerId),
-                      this.account?.id
-                    ];
-                    this.accountsFiltered = this.accounts.filter(account => !accountsToOmit.includes(account.id));
+                    this.friends = friends.map(friend => {
+                      return {
+                        ...friend,
+                        conversation: this.latestMessage(conversations, friend.peerId)
+                      }
+                    })
+                    return this.accountsService.loadAccounts()
+                      .pipe(
+                        tap(accounts => {
+                          const accountsToOmit = [
+                            ...this.friends.map(account => account.peerId),
+                            ...this.receivedFriendRequests.map(peer => peer.peerId),
+                            ...this.sentFriendRequests.map(peer => peer.peerId),
+                            this.account?.id
+                          ];
+                          this.randomAccounts = accounts.filter(account => !accountsToOmit.includes(account.id));
+                        })
+                      )
                   })
                 )
             ])
@@ -117,8 +122,8 @@ export class AccountInfoComponent implements OnInit {
       .subscribe();
   }
 
-  latestMessage(peerId: string): string {
-    return this.conversations.find(item => item.message.senderId === peerId)?.message?.content.substring(0, 15) || "";
+  latestMessage(conversations: LastConversationResponse[], peerId: string): LastConversationResponse {
+    return conversations.find(item => item.participantIds.includes(peerId))!;
   }
 
   selectParticipants($event: PeerResponse): void {

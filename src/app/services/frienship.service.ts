@@ -17,11 +17,11 @@ export class FriendshipService {
   }
 
   getFriendRequests(peerId: string): Observable<PeerResponse[]> {
-    return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/requests`);
+    return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/received-requests`);
   }
 
   getFriendRequestsISent(peerId: string): Observable<PeerResponse[]> {
-    return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/my-requests`);
+    return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/sent-requests`);
   }
 
   sendFriendRequest(peerId: string, requestedPeerId: string): Observable<boolean> {
