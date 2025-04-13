@@ -20,9 +20,13 @@ export class FriendshipService {
     return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/requests`);
   }
 
+  getFriendRequestsISent(peerId: string): Observable<PeerResponse[]> {
+    return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/my-requests`);
+  }
+
   sendFriendRequest(peerId: string, requestedPeerId: string): Observable<boolean> {
     return this.httpClient.put(`${this.baseUrl}/${peerId}/request`, {
-      requestedPeerId
+      peerId: requestedPeerId
     }).pipe(
       map(response => !!response),
     );
@@ -30,9 +34,17 @@ export class FriendshipService {
 
   acceptFriendRequest(peerId: string, requestedPeerId: string) {
     return this.httpClient.put(`${this.baseUrl}/${peerId}/accept`, {
-      requestedPeerId
+      peerId: requestedPeerId
     }).pipe(
       map(response => !!response),
     );
+  }
+
+  unfriendRequest(peerId: string, requestedPeerId: string) {
+    return this.httpClient.delete(`${this.baseUrl}/${peerId}/unfriend`, {
+      body: {
+        peerId: requestedPeerId
+      }
+    });
   }
 }

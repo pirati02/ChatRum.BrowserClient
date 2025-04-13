@@ -1,33 +1,57 @@
 <div class="tab-list-footer-page">
   <div class="header">მომხმარებელი</div>
-  <div class="d-flex flex-column" style="gap: 1rem">
-    <div class="artists-list d-flex flex-column">
-      <div class="d-flex flex-column">
-        <div class="d-flex flex-column" style="padding: 1rem">
-          <span>User name</span>
-          <span>{{ account?.userName }}</span>
+  <div class="d-flex flex-column" style="gap: 1rem;">
+    <div class="d-flex flex-row full-width">
+      <div class="artists-list d-flex flex-column" style="flex-grow: 1">
+        <div class="d-flex flex-column">
+          <div class="d-flex flex-column" style="padding: 1rem">
+            <span>User name</span>
+            <span>{{ account?.userName }}</span>
+          </div>
+          <div class="d-flex flex-column" style="padding: 1rem">
+            <span>Email</span>
+            <span>{{ account?.email }}</span>
+          </div>
+          <div class="d-flex flex-column" style="padding: 1rem">
+            <span>First name</span>
+            <span>{{ account?.firstName }}</span>
+          </div>
+          <div class="d-flex flex-column" style="padding: 1rem">
+            <span>Last name</span>
+            <span>{{ account?.lastName }}</span>
+          </div>
         </div>
-        <div class="d-flex flex-column" style="padding: 1rem">
-          <span>Email</span>
-          <span>{{ account?.email }}</span>
-        </div>
-        <div class="d-flex flex-column" style="padding: 1rem">
-          <span>First name</span>
-          <span>{{ account?.firstName }}</span>
-        </div>
-        <div class="d-flex flex-column" style="padding: 1rem">
-          <span>Last name</span>
-          <span>{{ account?.lastName }}</span>
+      </div>
+      <div class="d-flex flex-column" style="flex-grow: 1">
+        <span>მეგობრები</span>
+        <div class="card" *ngFor="let friend of friends">
+          <div class="card-body">
+            <h3 class="card-title">{{ friend.userName }}</h3>
+            <p class="card-text" style="opacity: 0.6;">{{ latestMessage(account?.id!) }}</p>
+            <button class="card-btn" (click)="selectParticipants(friend)">მიმოწერის გახსნა</button>
+            <button class="card-btn" (click)="unfriend(friend)">მეგობრობის გაუქმება</button>
+          </div>
         </div>
       </div>
     </div>
     <mat-divider [vertical]="false"></mat-divider>
     <div class="d-flex flex-row" style="gap: 1rem;">
-      <div class="card" *ngFor="let friend of friends" (click)="selectParticipants(friend)">
-        <div class="card-body">
-          <h3 class="card-title">{{friend.userName}}</h3>
-          <p class="card-text" style="opacity: 0.6;">{{latestMessage(account?.id!)}}</p>
-          <button class="card-btn">Open Conversation</button>
+      <div class="d-flex flex-column">
+        <span>მეგრობრის დამატების მოთხოვნები</span>
+        <div class="card" *ngFor="let friendRequest of friendRequests">
+          <div class="card-body">
+            <h3 class="card-title">{{ friendRequest.userName }}</h3>
+            <button class="card-btn" (click)="acceptFriend(friendRequest)">მეგობრობის დასტური</button>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex flex-column">
+        <span>სხვა მომხმარებლები</span>
+        <div class="card" *ngFor="let account of accountsFiltered">
+          <div class="card-body">
+            <h3 class="card-title">{{ account.userName }}</h3>
+            <button class="card-btn" (click)="sendFriendRequest(account)">მეგობრობის გაგზავნა</button>
+          </div>
         </div>
       </div>
     </div>

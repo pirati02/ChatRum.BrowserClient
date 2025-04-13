@@ -22,7 +22,11 @@ export interface UiAccount extends AccountResponse {
 export class AccountInfoComponent implements OnInit {
 
   account?: UiAccount;
+  accounts: UiAccount[] = [];
+  accountsFiltered: UiAccount[] = [];
   friends: PeerResponse[] = [];
+  friendRequests: PeerResponse[] = [];
+  myFriendRequests: PeerResponse[] = [];
   conversations: LastConversationResponse[] = [];
 
   constructor(
@@ -38,33 +42,7 @@ export class AccountInfoComponent implements OnInit {
     this.activatedRoute.params.subscribe(params => {
 
       const accountId = params['accountId'] as string;
-      forkJoin([
-        this.accountsService.loadAccount(accountId)
-          .pipe(
-            tap(account => {
-              this.account = account;
-            })
-          ),
-        this.friendshipService.getFriends(accountId)
-          .pipe(
-            mergeMap(friends => {
-              const friendIds = friends
-                .filter((_, index) => index <= 10)
-                .map(item => item.peerId);
-              return this.conversationService.findTop10Conversation(accountId, friendIds)
-                .pipe(
-                  tap(conversations => {
-                    this.conversations = conversations;
-                    conversations.forEach(item => {
-                      this.conversationService.startConnection(this.account?.id!, item.conversationId!);
-                    });
-                    this.friends = friends;
-                  })
-                )
-            })
-          )
-      ])
-        .subscribe();
+      this.loadAccountDetails(accountId);
     });
     this.conversationService.conversationAppendMessage$.subscribe(message => {
       if (message){
@@ -79,7 +57,64 @@ export class AccountInfoComponent implements OnInit {
           };
         }
       }
-    })
+    });
+  }
+
+  private loadAccountDetails(accountId: string) {
+    forkJoin([
+      this.accountsService.loadAccount(accountId)
+        .pipe(
+          tap(account => {
+            this.account = account;
+          })
+        ),
+      this.friendshipService.getFriendRequests(accountId)
+        .pipe(
+          tap(friends => {
+            this.friendRequests = friends;
+          })
+        ),
+      this.friendshipService.getFriendRequestsISent(accountId)
+        .pipe(
+          tap(friends => {
+            this.myFriendRequests = friends;
+          })
+        ),
+      this.friendshipService.getFriends(accountId)
+        .pipe(
+          mergeMap(friends => {
+            const friendIds = friends
+              .filter((_, index) => index <= 10)
+              .map(item => item.peerId);
+            this.friends = friends;
+            return forkJoin([
+              this.conversationService.findTop10Conversation(accountId, friendIds)
+                .pipe(
+                  tap(conversations => {
+                    this.conversations = conversations;
+                    conversations.forEach(item => {
+                      this.conversationService.startConnection(this.account?.id!, item.conversationId!);
+                    });
+                  })
+                ),
+              this.accountsService.loadAccounts()
+                .pipe(
+                  tap(accounts => {
+                    this.accounts = accounts;
+                    const accountsToOmit = [
+                      ...this.friends.map(account => account.peerId),
+                      ...this.friendRequests.map(peer => peer.peerId),
+                      ...this.myFriendRequests.map(peer => peer.peerId),
+                      this.account?.id
+                    ];
+                    this.accountsFiltered = this.accounts.filter(account => !accountsToOmit.includes(account.id));
+                  })
+                )
+            ])
+          })
+        )
+    ])
+      .subscribe();
   }
 
   latestMessage(peerId: string): string {
@@ -97,6 +132,36 @@ export class AccountInfoComponent implements OnInit {
             }
           }).then();
         }))
+      .subscribe();
+  }
+
+  sendFriendRequest(account: UiAccount) {
+    this.friendshipService.sendFriendRequest(this.account?.id!, account.id)
+      .pipe(
+        finalize(() => {
+          this.loadAccountDetails(this.account?.id!);
+        })
+      )
+      .subscribe()
+  }
+
+  unfriend(friend: PeerResponse) {
+    this.friendshipService.unfriendRequest(this.account?.id!, friend.peerId)
+      .pipe(
+        finalize(() => {
+          this.loadAccountDetails(this.account?.id!);
+        })
+      )
+      .subscribe();
+  }
+
+  acceptFriend(friend: PeerResponse) {
+    this.friendshipService.acceptFriendRequest(this.account?.id!, friend.peerId)
+      .pipe(
+        finalize(() => {
+          this.loadAccountDetails(this.account?.id!);
+        })
+      )
       .subscribe();
   }
 }
