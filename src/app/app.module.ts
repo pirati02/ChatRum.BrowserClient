@@ -8,7 +8,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatDividerModule} from '@angular/material/divider';
 import {MatListModule} from '@angular/material/list';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {MatError, MatFormField, MatLabel, MatOption, MatSelect} from "@angular/material/select";
 import {AccountInfoComponent} from "./routes/account-info/account-info.component";
@@ -41,7 +41,8 @@ import {MatInput} from "@angular/material/input";
     MatFormField,
     MatLabel,
     MatError,
-    MatInput
+    MatInput,
+    FormsModule
   ]
 })
 export class AppModule {

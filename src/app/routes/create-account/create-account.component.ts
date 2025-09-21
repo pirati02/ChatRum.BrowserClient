@@ -45,10 +45,9 @@ export class CreateAccountComponent implements OnInit {
     this.accountsService.createAccount(newAccount)
       .pipe()
       .subscribe({
-        next: () => {
+        next: (accountId: string) => {
           this.isSubmitting = false;
-          // Navigate to accounts list or details page
-          this.router.navigate(['/accounts']);
+          this.router.navigate([`account-info/${accountId}`]);
         },
         error: (err) => {
           console.error('Failed to create account', err);

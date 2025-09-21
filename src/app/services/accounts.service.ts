@@ -29,4 +29,17 @@ export class AccountsService{
     return this.httpClient
       .post<string>(this.baseUrl, account)
   }
+
+  verify(code: string, accountId: string){
+    return this.httpClient
+      .put<boolean>(this.baseUrl + '/activate',{
+        code,
+        accountId
+      })
+  }
+
+  resendCode(accountId: string){
+    return this.httpClient
+      .patch<boolean>(this.baseUrl + '/' + accountId + '/resend-code',{})
+  }
 }

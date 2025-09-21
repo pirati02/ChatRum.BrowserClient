@@ -30,6 +30,7 @@ export class AccountInfoComponent implements OnInit {
   friends: PeerExtended[] = [];
   receivedFriendRequests: PeerResponse[] = [];
   sentFriendRequests: PeerResponse[] = [];
+  verificationCode?: string;
 
   constructor(
     private accountsService: AccountsService,
@@ -168,5 +169,25 @@ export class AccountInfoComponent implements OnInit {
         })
       )
       .subscribe();
+  }
+
+  verifyAccount(){
+    this.accountsService.verify(this.verificationCode!, this.account?.id!)
+      .pipe(
+        finalize(() => {
+          this.loadAccountDetails(this.account?.id!);
+        })
+      )
+      .subscribe()
+  }
+
+  resendCode(){
+    this.accountsService.resendCode(this.account?.id!)
+      .pipe(
+        finalize(() => {
+          this.loadAccountDetails(this.account?.id!);
+        })
+      )
+      .subscribe()
   }
 }
