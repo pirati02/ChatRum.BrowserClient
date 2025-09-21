@@ -125,7 +125,9 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
     const content = this.chatGroup$?.controls.messageContent?.value!;
     if (!this.conversation.conversationId) {
       this.startConversation(<MessageRequest>{
-        content: content
+        content: content,
+        senderId: this.sender?.id,
+        receiverId: this.receiver?.id
       }).subscribe(() => this.cleanupMessageContent());
     }
 
