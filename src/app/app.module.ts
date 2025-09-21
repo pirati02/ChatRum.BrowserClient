@@ -10,8 +10,10 @@ import {MatListModule} from '@angular/material/list';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {ReactiveFormsModule} from "@angular/forms";
 import {AccountsComponent} from "./routes/accounts/accounts.component";
-import {MatOption, MatSelect} from "@angular/material/select";
+import {MatError, MatFormField, MatLabel, MatOption, MatSelect} from "@angular/material/select";
 import {AccountInfoComponent} from "./routes/account-info/account-info.component";
+import {CreateAccountComponent} from "./routes/create-account/create-account.component";
+import {MatInput} from "@angular/material/input";
 
 
 @NgModule({
@@ -21,7 +23,8 @@ import {AccountInfoComponent} from "./routes/account-info/account-info.component
   declarations: [
     ConversationComponent,
     AccountsComponent,
-    AccountInfoComponent
+    AccountInfoComponent,
+    CreateAccountComponent
   ],
   imports: [
     CommonModule,
@@ -34,7 +37,11 @@ import {AccountInfoComponent} from "./routes/account-info/account-info.component
     RouterLink,
     ReactiveFormsModule,
     MatSelect,
-    MatOption
+    MatOption,
+    MatFormField,
+    MatLabel,
+    MatError,
+    MatInput
   ]
 })
 export class AppModule {

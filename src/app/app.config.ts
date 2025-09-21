@@ -7,22 +7,22 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 
 export var chatBaseUrlProvider: ValueProvider = <ValueProvider> {
   provide: 'CHAT_BASE_URL',
-  useValue: 'http://localhost:5111'
+  useValue: 'http://localhost:5136/chat'
 }
 
 export var accountsBaseUrlProvider: ValueProvider = <ValueProvider> {
   provide: 'ACCOUNTS_BASE_URL',
-  useValue: 'http://localhost:5049'
+  useValue: 'http://localhost:5136/account'
 }
 
 export var friendshipBaseUrlProvider: ValueProvider = <ValueProvider> {
   provide: 'FRIENDSHIP_BASE_URL',
-  useValue: 'http://localhost:5031'
+  useValue: 'http://localhost:5136/friendship'
 }
 
 export const signalUrlProvider: ValueProvider = <ValueProvider>{
   provide: 'SIGNALR_URL',
-  useValue: 'http://localhost:5111/conversation'
+  useValue: 'http://localhost:5136/chat'
 }
 
 export const appConfig: ApplicationConfig = {
