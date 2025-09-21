@@ -1,13 +1,4 @@
-import {
-  AfterViewChecked,
-  AfterViewInit,
-  Component,
-  ElementRef,
-  NgZone,
-  OnDestroy,
-  OnInit,
-  ViewChild
-} from "@angular/core";
+import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ConversationService} from "../../services/conversation.service";
 import {catchError, finalize, of, tap} from "rxjs";
@@ -16,6 +7,8 @@ import {MessageResponse} from "../../models/message.response";
 import {MessageStatus} from "../../models/message.status";
 import {ActivatedRoute} from "@angular/router";
 import {UiAccount} from "../accounts/accounts.component";
+import {ApiError} from "../../models/api.error";
+import {ErrorType} from "../../models/error.types";
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | ''
 
@@ -80,12 +73,22 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
               });
           }
         }),
-        catchError(error => {
-          console.error(error);
+        catchError(err => {
+          let apiErrors: ApiError[] = [];
+
+          if (err.error) {
+            apiErrors = Array.isArray(err.error) ? err.error : [err.error];
+          }
+
+          const convNotFound = apiErrors.find(e => e.type ===  ErrorType.NotFound);
+          if (convNotFound) {
+            this.startConversation().subscribe(() => this.cleanupMessageContent());
+          }
+
           return of(null);
         }),
         finalize(() => {
-          this.conversationService.startConnection(this.sender?.id!, this.conversation.conversationId!)
+          this.conversationService.startConnection(this.sender?.id!)
         })
       )
       .subscribe();
@@ -121,24 +124,26 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
   sendMessage() {
     const content = this.chatGroup$?.controls.messageContent?.value!;
     if (!this.conversation.conversationId) {
-      this.conversationService.startConversation(
-        this.conversation.conversationId!,
-        this.sender?.id!,
-        this.receiver?.id!,
-        <MessageRequest>{
-          content: content,
-          senderId: this.sender?.id!
-        }
-      )
-        .subscribe(() => this.cleanupMessageContent());
+      this.startConversation(<MessageRequest>{
+        content: content
+      }).subscribe(() => this.cleanupMessageContent());
     }
 
     this.conversationService.sendMessage(
       this.conversation.conversationId!,
       <MessageRequest>{
         content: content,
-        senderId: this.sender?.id!
+        senderId: this.sender?.id!,
+        receiverId: this.receiver?.id!
       }).subscribe(() => this.cleanupMessageContent());
+  }
+
+  private startConversation(request: MessageRequest | null = null){
+    return this.conversationService.startConversation(
+      this.sender?.id!,
+      this.receiver?.id!,
+      request
+    );
   }
 
   private cleanupMessageContent() {
@@ -152,7 +157,6 @@ export class ConversationComponent implements OnInit, AfterViewInit, OnDestroy {
       scrollContainer.scrollTop = scrollContainer.scrollHeight;
     });
   }
-
 
   private statusString(status: MessageStatus): uiStatus {
     switch (status) {

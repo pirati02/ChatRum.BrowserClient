@@ -93,8 +93,8 @@ export class AccountInfoComponent implements OnInit {
               this.conversationService.findTop10Conversation(accountId, friendIds)
                 .pipe(
                   mergeMap(conversations => {
-                    conversations.forEach(item => {
-                      this.conversationService.startConnection(this.account?.id!, item.conversationId!);
+                    conversations.forEach(_ => {
+                      this.conversationService.startConnection(this.account?.id!);
                     });
                     this.friends = friends.map(friend => {
                       return {

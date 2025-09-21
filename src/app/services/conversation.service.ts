@@ -23,8 +23,6 @@ export class ConversationService {
   } | null>(null);
   private updateMessageStateSubject = new BehaviorSubject<{ messageId: string, status: MessageStatus } | null>(null);
 
-  // Expose an observable to listen for new conversations
-  conversationCreated$ = this.conversationCreatedSubject.asObservable();
   conversationAppendMessage$ = this.conversationAppendMessageSubject.asObservable();
   updateMessageState$ = this.updateMessageStateSubject.asObservable();
 
@@ -36,10 +34,10 @@ export class ConversationService {
 
   }
 
-  startConnection(accountId: string, conversationId?: string) {
+  startConnection(accountId: string) {
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${this.signalrUrl}?conversationId=${conversationId}&accountId=${accountId}`) // Replace with your actual backend URL
-      .withAutomaticReconnect() // Enables auto-reconnect
+      .withUrl(`${this.signalrUrl}?accountId=${accountId}`)
+      .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build();
 
@@ -52,11 +50,11 @@ export class ConversationService {
       this.conversationCreatedSubject.next(conversationId);
     });
 
-    this.hubConnection.on('MessageSent', (conversationId: string, message: UiMessage, update: boolean) => {
+    this.hubConnection.on('MessageSent', (message: UiMessage, update: boolean) => {
       this.conversationAppendMessageSubject.next({message, update});
     });
 
-    this.hubConnection.on('MessageStateUpdated', (conversationId: string, messageId: string, status: MessageStatus) => {
+    this.hubConnection.on('MessageStateUpdated', (messageId: string, status: MessageStatus) => {
       this.updateMessageStateSubject.next({messageId, status});
     })
   }
@@ -69,9 +67,9 @@ export class ConversationService {
     }
   }
 
-  startConversation(conversationId: string | null, sender: string, receiver: string, message: MessageRequest): Observable<any> {
+  startConversation(sender: string, receiver: string, message: MessageRequest | null = null): Observable<any> {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('StartConversation', conversationId, sender, receiver, message))
+      return fromPromise(this.hubConnection.invoke('StartConversation', sender, receiver, message))
     }
 
     return of(null);

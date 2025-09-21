@@ -1,5 +1,6 @@
 export interface MessageRequest {
-  senderId: string;  // Guid in C# -> string in TypeScript
+  senderId: string;
+  receiverId: string;
   content: string;
-  replyOf?: string | null;  // Nullable Guid -> Optional string | null
+  replyOf?: string | null;
 }
