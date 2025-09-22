@@ -36,7 +36,7 @@
       </div>
 
       <!-- ✅ Verification Section -->
-      <div class="verify-section card" *ngIf="!account?.isVerified" style="margin-top: 2rem;">
+      <div class="verify-section card" *ngIf="account?.isVerified === false" style="margin-top: 2rem;">
         <div class="card-body">
           <h3 class="card-title">Account Verification</h3>
           <p class="card-text" style="opacity: 0.7;">
