@@ -1,11 +1,11 @@
 import {ChangeDetectionStrategy, Component, OnInit} from "@angular/core";
 import {AccountsService} from "../../services/accounts.service";
 import {tap} from "rxjs";
-import {AccountResponse} from "../../models/account.response";
+import {Account} from "../../models/account";
 import {Router} from "@angular/router";
 import {MatSelectChange} from "@angular/material/select";
 
-export interface UiAccount extends AccountResponse {
+export interface UiAccount extends Account {
 
 }
 

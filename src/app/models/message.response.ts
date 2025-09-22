@@ -1,10 +1,11 @@
 import {MessageStatus} from "./message.status";
+import {Participant} from "./participant";
 
 export interface MessageResponse {
-  conversationId: string;
+  chatId: string;
   messageId: string;
   content: string;
   status: MessageStatus;
-  senderId: string;
+  sender: Participant;
   replyOf?: string | null;
 }

@@ -1,5 +1,5 @@
 import {Routes} from '@angular/router';
-import {ConversationComponent} from './routes/conversation/conversation.component';
+import {ChatComponent} from './routes/chat/chat.component';
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {AccountInfoComponent} from "./routes/account-info/account-info.component";
 import {CreateAccountComponent} from "./routes/create-account/create-account.component";
@@ -24,6 +24,6 @@ export const routes: Routes = [
   {
     title: 'მიმოწერა',
     path: 'conversation',
-    component: ConversationComponent
+    component: ChatComponent
   }
 ];

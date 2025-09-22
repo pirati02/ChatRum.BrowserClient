@@ -1,7 +1,7 @@
 import {Inject, Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
 import {UiAccount} from "../routes/accounts/accounts.component";
-import {AccountResponse} from "../models/account.response";
+import {Account} from "../models/account";
 
 @Injectable({
   providedIn: 'root'
@@ -25,7 +25,7 @@ export class AccountsService{
       .get<UiAccount>(this.baseUrl + '/' + id)
   }
 
-  createAccount(account: AccountResponse) {
+  createAccount(account: Account) {
     return this.httpClient
       .post<string>(this.baseUrl, account)
   }

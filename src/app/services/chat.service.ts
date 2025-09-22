@@ -6,25 +6,27 @@ import {HubConnectionState} from "@microsoft/signalr";
 import {MessageRequest} from "../models/message.request";
 import {fromPromise} from "rxjs/internal/observable/innerFrom";
 import {MessageStatus} from "../models/message.status";
-import {UiMessage} from "../routes/conversation/conversation.component";
-import {ConversationResponse} from "../models/conversation.response";
-import {LastConversationResponse} from "../models/last-conversation.response";
+import {UiMessage} from "../routes/chat/chat.component";
+import {ChatResponse} from "../models/chat.response";
+import {LastChatResponse} from "../models/last-chat.response";
+import {Participant} from "../models/participant";
 
 @Injectable({
   providedIn: 'root'
 })
-export class ConversationService {
+export class ChatService {
 
   private hubConnection!: signalR.HubConnection;
-  private conversationCreatedSubject = new BehaviorSubject<string | null>(null);
-  private conversationAppendMessageSubject = new BehaviorSubject<{
+  private chatCreatedSubject = new BehaviorSubject<string | null>(null);
+  private chatAppendMessageSubject = new BehaviorSubject<{
     message: UiMessage,
     update: boolean
   } | null>(null);
   private updateMessageStateSubject = new BehaviorSubject<{ messageId: string, status: MessageStatus } | null>(null);
 
-  conversationAppendMessage$ = this.conversationAppendMessageSubject.asObservable();
+  chatAppendMessage$ = this.chatAppendMessageSubject.asObservable();
   updateMessageState$ = this.updateMessageStateSubject.asObservable();
+  chatStarted$ = this.chatCreatedSubject.asObservable();
 
   constructor(
     @Inject('CHAT_BASE_URL') private baseUrl: string,
@@ -46,12 +48,12 @@ export class ConversationService {
       .then(() => console.log('SignalR Connected'))
       .catch(err => console.error('SignalR Connection Error: ', err));
 
-    this.hubConnection.on('ConversationStarted', (conversationId: string) => {
-      this.conversationCreatedSubject.next(conversationId);
+    this.hubConnection.on('ChatStarted', (chatId: string) => {
+      this.chatCreatedSubject.next(chatId);
     });
 
     this.hubConnection.on('MessageSent', (message: UiMessage, update: boolean) => {
-      this.conversationAppendMessageSubject.next({message, update});
+      this.chatAppendMessageSubject.next({message, update});
     });
 
     this.hubConnection.on('MessageStateUpdated', (messageId: string, status: MessageStatus) => {
@@ -67,17 +69,17 @@ export class ConversationService {
     }
   }
 
-  startConversation(sender: string, receiver: string, message: MessageRequest | null = null): Observable<any> {
+  startChat(participants: Participant[], isGroupChat: boolean = false): Observable<any> {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('StartConversation', sender, receiver, message))
+      return fromPromise(this.hubConnection.invoke('StartChat', participants, isGroupChat))
     }
 
     return of(null);
   }
 
-  sendMessage(conversationId: string, message: MessageRequest) {
+  sendMessage(chatId: string, message: MessageRequest) {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('SendMessage', conversationId, message))
+      return fromPromise(this.hubConnection.invoke('SendMessage', chatId, message))
     }
 
     return of(null);
@@ -85,28 +87,28 @@ export class ConversationService {
 
   updateMessageStatus(message: UiMessage, messageStatus: MessageStatus) {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('UpdateMessageState', message.conversationId, message, messageStatus))
+      return fromPromise(this.hubConnection.invoke('UpdateMessageState', message.chatId, message, messageStatus))
     }
 
     return of(null);
   }
 
-  findConversation(me: string, participantId: string): Observable<ConversationResponse> {
+  findChat(participants: Participant[]): Observable<ChatResponse> {
     return this.httpClient
-      .get<ConversationResponse>(this.baseUrl + `/existing/${me}/${participantId}`)
+      .post<ChatResponse>(this.baseUrl + `/search-existing`, participants)
   }
 
-  markAsRead(conversationId: string, messageIds: string[]) {
+  markAsRead(chatId: string, messageIds: string[]) {
     return this.httpClient
-      .post<boolean>(this.baseUrl + `/mark-as-read/${conversationId}`, messageIds);
+      .post<boolean>(this.baseUrl + `/mark-as-read/${chatId}`, messageIds);
   }
 
-  findTop10Conversation(accountId: string, friendIds: string[]): Observable<LastConversationResponse[]> {
+  findTop10Conversation(accountId: string, friendIds: string[]): Observable<LastChatResponse[]> {
     let params = new HttpParams();
     friendIds.forEach(id => {
       params = params.append('ids', id);
     });
-    return this.httpClient.get<LastConversationResponse[]>(this.baseUrl + `/${accountId}/top10`, {
+    return this.httpClient.get<LastChatResponse[]>(this.baseUrl + `/${accountId}/top10`, {
       params: params
     })
   }

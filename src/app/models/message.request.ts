@@ -1,6 +1,7 @@
+import {Participant} from "./participant";
+
 export interface MessageRequest {
-  senderId: string;
-  receiverId: string;
+  sender: Participant;
   content: string;
   replyOf?: string | null;
 }

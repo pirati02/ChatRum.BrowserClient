@@ -1,7 +1,7 @@
 import {CommonModule} from "@angular/common";
 import {provideHttpClient, withFetch, withJsonpSupport} from "@angular/common/http";
 import {NgModule} from "@angular/core";
-import {ConversationComponent} from "./routes/conversation/conversation.component";
+import {ChatComponent} from "./routes/chat/chat.component";
 import {RouterLink, RouterOutlet} from "@angular/router";
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
@@ -21,7 +21,7 @@ import {MatInput} from "@angular/material/input";
     provideHttpClient(withFetch(), withJsonpSupport())
   ],
   declarations: [
-    ConversationComponent,
+    ChatComponent,
     AccountsComponent,
     AccountInfoComponent,
     CreateAccountComponent
