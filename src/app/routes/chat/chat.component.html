@@ -9,14 +9,14 @@
               <ng-container
                 [ngTemplateOutlet]="receiverTemplate"
                 [ngTemplateOutletContext]="{
-                  account: this.getReceiver(message.sender.id),
+                  participant: this.getReceiver(message.sender.id),
                   message: message
                 }"
                 *ngIf="message.sender.id !== this.me?.id"></ng-container>
               <ng-container
                 [ngTemplateOutlet]="senderTemplate"
                 [ngTemplateOutletContext]="{
-                  account: this.me,
+                  participant: this.me,
                   message: message
                 }"
                 *ngIf="message.sender.id === this.me?.id"></ng-container>
@@ -30,7 +30,7 @@
   </form>
 </div>
 
-<ng-template #senderTemplate let-account="account" let-message="message">
+<ng-template #senderTemplate let-participant="participant" let-message="message">
   <div class="d-flex flex-column message-box-mine" style="margin: 1.5rem">
     <span style="font-size: 0.6em; margin-bottom: 1rem">you</span>
     <span style="font-size: 1.2em">{{ message.content }}</span>
@@ -39,9 +39,9 @@
 </ng-template>
 
 
-<ng-template #receiverTemplate let-account="account" let-message="message">
+<ng-template #receiverTemplate let-participant="participant" let-message="message">
   <div class="d-flex flex-column message-box-others" style="margin: 1.5rem">
-    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ this.account?.userName }}</span>
+    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ this.participant?.nickName }}</span>
     <span style="font-size: 1.2em">{{ message.content }}</span>
   </div>
 </ng-template>
