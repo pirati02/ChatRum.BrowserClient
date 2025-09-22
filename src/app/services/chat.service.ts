@@ -69,9 +69,9 @@ export class ChatService {
     }
   }
 
-  startChat(participants: Participant[], isGroupChat: boolean = false): Observable<any> {
+  startChat(participants: Participant[], isGroupChat: boolean = false, overrideExisting: boolean = false): Observable<any> {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('StartChat', participants, isGroupChat))
+      return fromPromise(this.hubConnection.invoke('StartChat', participants, isGroupChat, overrideExisting))
     }
 
     return of(null);
@@ -96,6 +96,11 @@ export class ChatService {
   findChat(participants: Participant[]): Observable<ChatResponse> {
     return this.httpClient
       .post<ChatResponse>(this.baseUrl + `/search-existing`, participants)
+  }
+
+  getChat(chatId: string): Observable<ChatResponse> {
+    return this.httpClient
+      .get<ChatResponse>(this.baseUrl + `/${chatId}`)
   }
 
   markAsRead(chatId: string, messageIds: string[]) {

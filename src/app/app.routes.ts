@@ -23,7 +23,7 @@ export const routes: Routes = [
   },
   {
     title: 'მიმოწერა',
-    path: 'conversation',
+    path: 'chat',
     component: ChatComponent
   }
 ];

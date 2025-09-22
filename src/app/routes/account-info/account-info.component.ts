@@ -10,12 +10,8 @@ import {PeerResponse} from "../../models/peer.response";
 import {LastChatResponse} from "../../models/last-chat.response";
 import {LastestMessage} from "../../models/latest-message.response";
 
-export interface UiAccount extends Account {
-
-}
-
 export interface PeerExtended extends PeerResponse {
-  chat: LastChatResponse | null
+  checked: boolean
 }
 
 @Component({
@@ -25,12 +21,14 @@ export interface PeerExtended extends PeerResponse {
 })
 export class AccountInfoComponent implements OnInit {
 
-  account?: UiAccount;
-  randomAccounts: UiAccount[] = [];
+  account?: Account;
+  randomAccounts: Account[] = [];
   friends: PeerExtended[] = [];
   receivedFriendRequests: PeerResponse[] = [];
   sentFriendRequests: PeerResponse[] = [];
   verificationCode?: string;
+
+  chats: LastChatResponse[] = [];
 
   constructor(
     private accountsService: AccountsService,
@@ -50,9 +48,9 @@ export class AccountInfoComponent implements OnInit {
     this.chatService.chatAppendMessage$.subscribe(message => {
       if (message) {
         this.chatService.updateMessageStatus(message?.message!, MessageStatus.Delivered);
-        const conversation = this.friends.find(item => item.chat?.chatId === message?.message.chatId);
-        if (conversation?.chat) {
-          conversation.chat.message = <LastestMessage>{
+        const chat = this.chats.find(item => item?.chatId === message?.message.chatId);
+        if (chat) {
+          chat.message = <LastestMessage>{
             content: message?.message.content,
             sender: message?.message.sender,
             chatId: message?.message.chatId,
@@ -93,7 +91,8 @@ export class AccountInfoComponent implements OnInit {
             this.friends = friends.map(friend => {
               return {
                 ...friend,
-                chat: null
+                chat: null,
+                checked: false
               }
             })
 
@@ -104,12 +103,7 @@ export class AccountInfoComponent implements OnInit {
                     chats.forEach(_ => {
                       this.chatService.startConnection(this.account?.id!);
                     });
-                    this.friends = friends.map(friend => {
-                      return {
-                        ...friend,
-                        chat: this.latestMessage(chats, friend.peerId)
-                      }
-                    })
+                    this.chats = chats;
                     return this.accountsService.loadAccounts()
                       .pipe(
                         tap(accounts => {
@@ -131,25 +125,22 @@ export class AccountInfoComponent implements OnInit {
       .subscribe();
   }
 
-  latestMessage(chats: LastChatResponse[], peerId: string): LastChatResponse {
-    return chats.find(item => item.participantIds?.includes(peerId))!;
-  }
-
-  selectParticipants($event: PeerResponse): void {
+  startPrivateChat($event: PeerResponse): void {
     this.accountsService.loadAccount($event.peerId)
       .pipe(
         tap(receiver => {
-          this.router.navigate(['conversation'], {
+          this.router.navigate(['chat'], {
             queryParams: {
-              receiver: JSON.stringify(receiver),
-              sender: JSON.stringify(this.account)
+              receivers: JSON.stringify([receiver]),
+              me: JSON.stringify(this.account),
+              isGroupChat: false
             }
           }).then();
         }))
       .subscribe();
   }
 
-  sendFriendRequest(account: UiAccount) {
+  sendFriendRequest(account: Account) {
     this.friendshipService.sendFriendRequest(this.account?.id!, account.id)
       .pipe(
         finalize(() => {
@@ -197,5 +188,44 @@ export class AccountInfoComponent implements OnInit {
         })
       )
       .subscribe()
+  }
+
+  startGroupChat(overrideExisting: boolean = false){
+    const selectedFriends = this.friends.filter(item => item.checked)
+      .map(friend => <Account>{
+        id: friend.peerId,
+        firstName: friend.firstName,
+        lastName: friend.lastName,
+        userName: friend.userName,
+        isVerified: true //accepted friend requests are always verified
+      });
+    this.router.navigate(['chat'], {
+      queryParams: {
+        receivers: JSON.stringify(selectedFriends),
+        me: JSON.stringify(this.account),
+        isGroupChat: true,
+        overrideExisting
+      }
+    }).then();
+  }
+
+  openChat(chat: LastChatResponse){
+    const selectedFriends = chat.participants
+      .map(friend => <Account>{
+        id: friend.id,
+        firstName: friend.firstName,
+        lastName: friend.lastName,
+        userName: friend.nickName,
+        isVerified: true //accepted friend requests are always verified
+      });
+
+    this.router.navigate(['chat'], {
+      queryParams: {
+        chatId: chat.chatId,
+        me: JSON.stringify(this.account),
+        receivers: JSON.stringify(selectedFriends),
+        isGroupChat: chat.isGroupChat
+      }
+    })
   }
 }

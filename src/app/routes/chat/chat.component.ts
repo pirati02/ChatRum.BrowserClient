@@ -1,15 +1,16 @@
 import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ChatService} from "../../services/chat.service";
-import {catchError, finalize, mergeMap, Observable, of, tap} from "rxjs";
+import {catchError, delay, map, mergeMap, Observable, of, tap} from "rxjs";
 import {MessageRequest} from "../../models/message.request";
 import {MessageResponse} from "../../models/message.response";
 import {MessageStatus} from "../../models/message.status";
 import {ActivatedRoute} from "@angular/router";
-import {UiAccount} from "../accounts/accounts.component";
 import {ApiError} from "../../models/api.error";
 import {ErrorType} from "../../models/error.types";
 import {Participant} from "../../models/participant";
+import {Account} from "../../models/account";
+import {ChatResponse} from "../../models/chat.response";
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | ''
 
@@ -35,6 +36,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   me?: Participant;
   participants: Participant[] = [];
+  isGroupChat: boolean = false;
+  overrideExisting: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -48,36 +51,26 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.chatGroup$ = this.fb.group({
       messageContent: ['']
     });
-    this.gatherParticipants()
+    this.gatherChatInfo()
       .pipe(
-        mergeMap(() => {
+        tap(() => {
+          this.chatService.startConnection(this.me?.id!)
+        }),
+        delay(1000),
+        mergeMap(({chatId}) => {
+          if (this.overrideExisting){
+            return of();
+          }
+
+          if (chatId) {
+            return this.chatService.getChat(chatId)
+              .pipe(
+                tap(res => this.initializeChat(res))
+              )
+          }
           return this.chatService.findChat(this.participants)
             .pipe(
-              tap(res => {
-                this.chat = {
-                  ...res,
-                  messages: res.messages.map(item => {
-                    item.statusString = this.statusString(item.status);
-                    return item;
-                  })
-                };
-
-                const others = this.participants.filter(p => p.id !== this.me?.id)?.map(a => a.id)!;
-                const unreadMessages = this.chat.messages.filter(a => ([MessageStatus.Sent, MessageStatus.Delivered]
-                  .includes(a.status)) && others?.includes(a.sender.id)
-                );
-                if (unreadMessages.length > 0) {
-                  this.chatService.markAsRead(this.chat.chatId!, unreadMessages.map(item => item.messageId))
-                    .subscribe(res => {
-                      if (res) {
-                        this.chat.messages.forEach(item => {
-                          item.status = MessageStatus.Seen;
-                          item.statusString = this.statusString(item.status);
-                        })
-                      }
-                    });
-                }
-              }),
+              tap(res => this.initializeChat(res)),
               catchError(err => {
                 let apiErrors: ApiError[] = [];
 
@@ -91,15 +84,38 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
 
                 return of(null);
-              }),
-              finalize(() => {
-                this.chatService.startConnection(this.me?.id!)
               })
             );
         })
       ).subscribe();
 
     this.startListeners();
+  }
+
+  private initializeChat(res: ChatResponse) {
+    this.chat = {
+      ...res,
+      messages: res.messages.map(item => {
+        item.statusString = this.statusString(item.status);
+        return item;
+      })
+    };
+
+    const others = this.participants.filter(p => p.id !== this.me?.id)?.map(a => a.id)!;
+    const unreadMessages = this.chat.messages.filter(a => ([MessageStatus.Sent, MessageStatus.Delivered]
+      .includes(a.status)) && others?.includes(a.sender.id)
+    );
+    if (unreadMessages.length > 0) {
+      this.chatService.markAsRead(this.chat.chatId!, unreadMessages.map(item => item.messageId))
+        .subscribe(res => {
+          if (res) {
+            this.chat.messages.forEach(item => {
+              item.status = MessageStatus.Seen;
+              item.statusString = this.statusString(item.status);
+            })
+          }
+        });
+    }
   }
 
   ngAfterViewInit(): void {
@@ -142,28 +158,34 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   private startChatInternal() {
     return this.chatService.startChat(
       this.participants!,
+      this.isGroupChat,
+      this.overrideExisting
     );
   }
 
-  private gatherParticipants(): Observable<any> {
+  private gatherChatInfo(): Observable<any> {
     return this.activatedRoute.queryParams.pipe(
       tap(params => {
-        const receiver = JSON.parse(params['receiver']) as UiAccount;
-        const sender = JSON.parse(params['sender']) as UiAccount;
+        const receivers = JSON.parse(params['receivers']) as Account[];
+        const me = JSON.parse(params['me']) as Account;
+
         this.me = <Participant>{
+          id: me.id,
+          firstName: me.firstName,
+          lastName: me.lastName,
+          nickName: me.userName
+        };
+        this.participants.push(this.me);
+
+        this.participants = [...this.participants, ...receivers.map(receiver => <Participant>{
           id: receiver.id,
           firstName: receiver.firstName,
           lastName: receiver.lastName,
           nickName: receiver.userName
-        };
-
-        this.participants.push(this.me);
-        this.participants.push(<Participant>{
-          id: sender.id,
-          firstName: sender.firstName,
-          lastName: sender.lastName,
-          nickName: sender.userName
-        });
+        })];
+        this.isGroupChat = params["isGroupChat"] == "true" || false;
+        this.overrideExisting = params["overrideExisting"] == "true" || false;
+        this.chat = {...this.chat, chatId: params["chatId"]}
       })
     );
   }
@@ -183,6 +205,10 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.chatService.chatAppendMessage$.subscribe((result) => {
       if (result?.message) {
+        if (this.chat.messages.some(a => a.messageId === result?.message.messageId)) {
+          return;
+        }
+
         result!.message!.statusString = this.statusString(result!.message?.status);
         this.chat.messages.push(result!.message);
         if (result?.update === true) {

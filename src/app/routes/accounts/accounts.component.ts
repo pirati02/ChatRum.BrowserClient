@@ -1,13 +1,9 @@
-import {ChangeDetectionStrategy, Component, OnInit} from "@angular/core";
+import {Component, OnInit} from "@angular/core";
 import {AccountsService} from "../../services/accounts.service";
 import {tap} from "rxjs";
 import {Account} from "../../models/account";
 import {Router} from "@angular/router";
 import {MatSelectChange} from "@angular/material/select";
-
-export interface UiAccount extends Account {
-
-}
 
 @Component({
   selector: 'app-accounts',
@@ -16,9 +12,9 @@ export interface UiAccount extends Account {
 })
 export class AccountsComponent implements OnInit {
 
-  protected accounts: UiAccount[] = [];
-  protected filteredAccounts: UiAccount[] = [];
-  sender?: UiAccount;
+  protected accounts: Account[] = [];
+  protected filteredAccounts: Account[] = [];
+  sender?: Account;
 
   constructor(
     private accountsService: AccountsService,
