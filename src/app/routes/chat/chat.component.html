@@ -1,5 +1,8 @@
 <div class="tab-list-footer-page">
-  <div class="header">ჩატი</div>
+  <div class="header d-flex flex-row">
+    <span style="flex-grow: 1">ჩატი</span>
+    <mat-icon style="align-self: flex-end; cursor: pointer" (click)="openChatDetails()">menu</mat-icon>
+  </div>
   <form [formGroup]="chatGroup$!">
     <div class="artists-list d-flex full-width full-height flex-column">
       <div class="d-flex flex-column full-width full-height">
@@ -16,24 +19,42 @@
               <ng-container
                 [ngTemplateOutlet]="senderTemplate"
                 [ngTemplateOutletContext]="{
-                  participant: this.me,
                   message: message
                 }"
                 *ngIf="message.sender.id === this.me?.id"></ng-container>
             </ng-container>
           </div>
         </div>
-        <input type="text" class="message-input" formControlName="messageContent" placeholder="Type a message...">
-        <button class="send-btn" (click)="sendMessage()">Send</button>
+        <div>
+          <div class="d-flex flex-row">
+            <input type="text" class="message-input" id="message-content" formControlName="messageContent"
+                   [placeholder]="messagePlaceholder" style="flex-grow: 1">
+            <div>
+              <button class="send-btn" (click)="fileInput.click()">
+                <mat-icon>attach_file</mat-icon>
+              </button>
+              <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)">
+            </div>
+          </div>
+          <button class="send-btn" (click)="sendMessage()">Send</button>
+        </div>
       </div>
     </div>
   </form>
 </div>
 
-<ng-template #senderTemplate let-participant="participant" let-message="message">
+<ng-template #senderTemplate let-message="message">
   <div class="d-flex flex-column message-box-mine" style="margin: 1.5rem">
     <span style="font-size: 0.6em; margin-bottom: 1rem">you</span>
-    <span style="font-size: 1.2em">{{ message.content }}</span>
+    <ng-container [ngSwitch]="message.content.$type">
+      <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
+                    [ngTemplateOutletContext]="{message: message}">
+      </ng-container>
+      <ng-container *ngSwitchCase="'link'" [ngTemplateOutlet]="linkContent"
+                    [ngTemplateOutletContext]="{message: message}"></ng-container>
+      <ng-container *ngSwitchCase="'image'" [ngTemplateOutlet]="imageContent"
+                    [ngTemplateOutletContext]="{message: message, alignStyle: 'end'}"></ng-container>
+    </ng-container>
     <span style="font-size: 0.8em">{{ message.statusString }}</span>
   </div>
 </ng-template>
@@ -41,7 +62,30 @@
 
 <ng-template #receiverTemplate let-participant="participant" let-message="message">
   <div class="d-flex flex-column message-box-others" style="margin: 1.5rem">
-    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ this.participant?.nickName }}</span>
-    <span style="font-size: 1.2em">{{ message.content }}</span>
+    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ participant?.nickName }}</span>
+    <ng-container [ngSwitch]="message.content.$type">
+      <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
+                    [ngTemplateOutletContext]="{message: message}">
+      </ng-container>
+      <ng-container *ngSwitchCase="'link'" [ngTemplateOutlet]="linkContent"
+                    [ngTemplateOutletContext]="{message: message}"></ng-container>
+      <ng-container *ngSwitchCase="'image'" [ngTemplateOutlet]="imageContent"
+                    [ngTemplateOutletContext]="{message: message}"></ng-container>
+    </ng-container>
   </div>
+</ng-template>
+
+<ng-template #plainTextContent let-message="message">
+  <span style="font-size: 1.2em">{{ message.content.content }}</span>
+</ng-template>
+
+<ng-template #linkContent let-message="message">
+  <a style="font-size: 1.2em" [href]="message.content.content">{{ message.content.content }}</a>
+</ng-template>
+
+<ng-template #imageContent let-message="message" let-alignStyle="alignStyle">
+  <img [src]="'data:image/png;base64,' + message.content.content" style="max-width: 20rem; max-height: 20rem;"
+       [ngStyle]="{
+          'align-self':alignStyle || 'start'
+          }">
 </ng-template>

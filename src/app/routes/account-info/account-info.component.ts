@@ -61,70 +61,6 @@ export class AccountInfoComponent implements OnInit {
     });
   }
 
-  private loadAccountDetails(accountId: string) {
-    forkJoin([
-      this.accountsService.loadAccount(accountId)
-        .pipe(
-          tap(account => {
-            this.account = account;
-          })
-        ),
-      this.friendshipService.getFriendRequests(accountId)
-        .pipe(
-          tap(friends => {
-            this.receivedFriendRequests = friends;
-          })
-        ),
-      this.friendshipService.getFriendRequestsISent(accountId)
-        .pipe(
-          tap(friends => {
-            this.sentFriendRequests = friends;
-          })
-        ),
-      this.friendshipService.getFriends(accountId)
-        .pipe(
-          mergeMap(friends => {
-            const friendIds = friends
-              .filter((_, index) => index <= 10)
-              .map(item => item.peerId);
-
-            this.friends = friends.map(friend => {
-              return {
-                ...friend,
-                chat: null,
-                checked: false
-              }
-            })
-
-            return forkJoin([
-              this.chatService.findTop10Conversation(accountId, friendIds)
-                .pipe(
-                  mergeMap(chats => {
-                    chats.forEach(_ => {
-                      this.chatService.startConnection(this.account?.id!);
-                    });
-                    this.chats = chats;
-                    return this.accountsService.loadAccounts()
-                      .pipe(
-                        tap(accounts => {
-                          const accountsToOmit = [
-                            ...this.friends.map(account => account.peerId),
-                            ...this.receivedFriendRequests.map(peer => peer.peerId),
-                            ...this.sentFriendRequests.map(peer => peer.peerId),
-                            this.account?.id
-                          ];
-                          this.randomAccounts = accounts.filter(account => !accountsToOmit.includes(account.id));
-                        })
-                      )
-                  })
-                )
-            ])
-          })
-        )
-    ])
-      .subscribe();
-  }
-
   startPrivateChat($event: PeerResponse): void {
     this.accountsService.loadAccount($event.peerId)
       .pipe(
@@ -199,14 +135,15 @@ export class AccountInfoComponent implements OnInit {
         userName: friend.userName,
         isVerified: true //accepted friend requests are always verified
       });
-    this.router.navigate(['chat'], {
-      queryParams: {
-        receivers: JSON.stringify(selectedFriends),
-        me: JSON.stringify(this.account),
-        isGroupChat: true,
-        overrideExisting
-      }
-    }).then();
+    if (selectedFriends.length > 1) {
+      this.router.navigate(['chat'], {
+        queryParams: {
+          receivers: JSON.stringify(selectedFriends),
+          me: JSON.stringify(this.account),
+          overrideExisting
+        }
+      }).then();
+    }
   }
 
   openChat(chat: LastChatResponse){
@@ -223,9 +160,72 @@ export class AccountInfoComponent implements OnInit {
       queryParams: {
         chatId: chat.chatId,
         me: JSON.stringify(this.account),
-        receivers: JSON.stringify(selectedFriends),
-        isGroupChat: chat.isGroupChat
+        receivers: JSON.stringify(selectedFriends)
       }
-    })
+    }).then();
+  }
+
+  private loadAccountDetails(accountId: string) {
+    forkJoin([
+      this.accountsService.loadAccount(accountId)
+        .pipe(
+          tap(account => {
+            this.account = account;
+          })
+        ),
+      this.friendshipService.getFriendRequests(accountId)
+        .pipe(
+          tap(friends => {
+            this.receivedFriendRequests = friends;
+          })
+        ),
+      this.friendshipService.getFriendRequestsISent(accountId)
+        .pipe(
+          tap(friends => {
+            this.sentFriendRequests = friends;
+          })
+        ),
+      this.friendshipService.getFriends(accountId)
+        .pipe(
+          mergeMap(friends => {
+            const friendIds = friends
+              .filter((_, index) => index <= 10)
+              .map(item => item.peerId);
+
+            this.friends = friends.map(friend => {
+              return {
+                ...friend,
+                chat: null,
+                checked: false
+              }
+            })
+
+            return forkJoin([
+              this.chatService.findTop10Conversation(accountId, friendIds)
+                .pipe(
+                  mergeMap(chats => {
+                    chats.forEach(_ => {
+                      this.chatService.startConnection(this.account?.id!);
+                    });
+                    this.chats = chats;
+                    return this.accountsService.loadAccounts()
+                      .pipe(
+                        tap(accounts => {
+                          const accountsToOmit = [
+                            ...this.friends.map(account => account.peerId),
+                            ...this.receivedFriendRequests.map(peer => peer.peerId),
+                            ...this.sentFriendRequests.map(peer => peer.peerId),
+                            this.account?.id
+                          ];
+                          this.randomAccounts = accounts.filter(account => !accountsToOmit.includes(account.id));
+                        })
+                      )
+                  })
+                )
+            ])
+          })
+        )
+    ])
+      .subscribe();
   }
 }

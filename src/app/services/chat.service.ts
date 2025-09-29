@@ -69,9 +69,14 @@ export class ChatService {
     }
   }
 
-  startChat(participants: Participant[], isGroupChat: boolean = false, overrideExisting: boolean = false): Observable<any> {
+  startChat(
+    participants: Participant[],
+    creator: Participant,
+    chatName: string,
+    overrideExisting: boolean = false
+  ): Observable<any> {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
-      return fromPromise(this.hubConnection.invoke('StartChat', participants, isGroupChat, overrideExisting))
+      return fromPromise(this.hubConnection.invoke('StartChat', participants, creator, chatName, overrideExisting))
     }
 
     return of(null);

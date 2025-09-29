@@ -1,0 +1,13 @@
+<div>
+  <h2 mat-dialog-title>Chat Details</h2>
+  <mat-dialog-content>
+    <p><strong>Creator:</strong> {{ data.creator?.nickName }}</p>
+    <h3>Participants</h3>
+    <ul>
+      <li *ngFor="let p of data.participants">{{ p.nickName }}</li>
+    </ul>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="close()">Close</button>
+  </mat-dialog-actions>
+</div>

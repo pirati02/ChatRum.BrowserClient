@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ChatService} from "../../services/chat.service";
-import {catchError, delay, map, mergeMap, Observable, of, tap} from "rxjs";
+import {catchError, delay, mergeMap, Observable, of, tap} from "rxjs";
 import {MessageRequest} from "../../models/message.request";
 import {MessageResponse} from "../../models/message.response";
 import {MessageStatus} from "../../models/message.status";
@@ -10,12 +10,24 @@ import {ApiError} from "../../models/api.error";
 import {ErrorType} from "../../models/error.types";
 import {Participant} from "../../models/participant";
 import {Account} from "../../models/account";
+import {MatDialog} from "@angular/material/dialog";
+import {ChatDetailsComponent, ChatDetailsData} from "../chat-details/chat-details.component";
 import {ChatResponse} from "../../models/chat.response";
+import {ImageContent, PlainTextContent} from "../../models/message.content";
+import {HelperService} from "../../services/helper.service";
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | ''
 
 export interface UiMessage extends MessageResponse {
   statusString: string
+}
+
+interface Chat {
+  chatId: string | null;
+  messages: UiMessage[],
+  participants?: Participant[],
+  creator: Participant | null,
+  createdDate: string | null
 }
 
 @Component({
@@ -29,21 +41,27 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   chatGroup$?: FormGroup<{
     messageContent: FormControl<string | null>
   }>;
-  chat: { chatId: string | null; messages: UiMessage[] } = {
+  chat: Chat = <Chat>{
     chatId: null,
-    messages: []
+    messages: [],
+    participants: [],
+    creator: null,
+    createdDate: null
   };
 
   me?: Participant;
-  participants: Participant[] = [];
-  isGroupChat: boolean = false;
   overrideExisting: boolean = false;
+  private messagePlaceholderDefault: string = "Type a message...";
+  messagePlaceholder: string = this.messagePlaceholderDefault;
+  private selectedFile?: File;
 
   constructor(
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private chatService: ChatService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private dialog: MatDialog,
+    private helperService: HelperService
   ) {
   }
 
@@ -58,17 +76,15 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         }),
         delay(1000),
         mergeMap(({chatId}) => {
-          if (this.overrideExisting){
+          if (this.overrideExisting) {
             return of();
           }
 
           if (chatId) {
             return this.chatService.getChat(chatId)
-              .pipe(
-                tap(res => this.initializeChat(res))
-              )
+              .pipe(tap(res => this.initializeChat(res)))
           }
-          return this.chatService.findChat(this.participants)
+          return this.chatService.findChat(this.chat?.participants!)
             .pipe(
               tap(res => this.initializeChat(res)),
               catchError(err => {
@@ -92,16 +108,116 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.startListeners();
   }
 
+  ngAfterViewInit(): void {
+    this.scrollToBottom();
+  }
+
+  ngOnDestroy() {
+    this.chatService.stopConnection();
+  }
+
+  sendMessage() {
+    if (this.selectedFile) {
+      this.sendFileMessage();
+      return;
+    }
+
+
+    const content = this.chatGroup$?.controls.messageContent?.value!;
+    if (!content?.trim()) {
+      return;
+    }
+
+    let message: MessageRequest = {
+      sender: this.me!,
+      content: <PlainTextContent>{ type: 'plain', content: content },
+      replyOf: null
+    };
+
+    if (this.helperService.isLink(content)){
+      message = {
+        ...message,
+        content: {
+          type: 'link',
+          content: content,
+        }
+      };
+    }
+
+    if (!this.chat.chatId) {
+      this.startChatInternal()
+        .pipe(
+          tap(() => this.chatService.sendMessage(this.chat.chatId!, message)
+            .subscribe(() => this.cleanupMessageContent()))
+        ).subscribe();
+    } else {
+      this.chatService.sendMessage(this.chat.chatId!, message)
+        .subscribe(() => this.cleanupMessageContent());
+    }
+  }
+
+  sendFileMessage() {
+    if (!this.selectedFile) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      const message: MessageRequest = {
+        sender: this.me!,
+        content: <ImageContent>{ type: 'image', content: base64 },
+        replyOf: null
+      };
+
+      if (!this.chat.chatId) {
+        this.startChatInternal()
+          .pipe(
+            tap(() => this.chatService.sendMessage(this.chat.chatId!, message)
+              .subscribe(() => this.cleanupFileMessage()))
+          ).subscribe();
+      } else {
+        this.chatService.sendMessage(this.chat.chatId!, message)
+          .subscribe(() => this.cleanupFileMessage());
+      }
+    };
+
+    reader.readAsDataURL(this.selectedFile);
+  }
+
+  onFileSelected($event: Event) {
+    const target = $event.target as HTMLInputElement;
+    const file: File = Array.from(target.files!)[0];
+    this.messagePlaceholder = file.name;
+    this.selectedFile = file;
+  }
+
+  openChatDetails() {
+    this.dialog.open(ChatDetailsComponent, {
+      width: '400px',
+      data: <ChatDetailsData>{
+        participants: this.chat.participants,
+        creator: this.chat.creator,
+        createdDate: this.chat.createdDate
+      }
+    });
+  }
+
+  getReceiver(id: string): Participant | undefined {
+    return this.chat?.participants?.find(p => p.id === id);
+  }
+
   private initializeChat(res: ChatResponse) {
     this.chat = {
       ...res,
       messages: res.messages.map(item => {
         item.statusString = this.statusString(item.status);
         return item;
-      })
+      }),
+      participants: res.participants,
+      creator: res.creator,
+      createdDate: res.createdDate
     };
 
-    const others = this.participants.filter(p => p.id !== this.me?.id)?.map(a => a.id)!;
+    const others = this.chat?.participants!.filter(p => p.id !== this.me?.id)?.map(a => a.id)!;
     const unreadMessages = this.chat.messages.filter(a => ([MessageStatus.Sent, MessageStatus.Delivered]
       .includes(a.status)) && others?.includes(a.sender.id)
     );
@@ -118,47 +234,15 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit(): void {
-    this.scrollToBottom();
-  }
-
-  ngOnDestroy() {
-    this.chatService.stopConnection();
-  }
-
-  sendMessage() {
-    const content = this.chatGroup$?.controls.messageContent?.value!;
-    if (!this.chat.chatId) {
-      this.startChatInternal()
-        .pipe(
-          tap(() => {
-            this.chatService.sendMessage(
-              this.chat.chatId!,
-              <MessageRequest>{
-                content: content,
-                sender: this.me!,
-              }).subscribe(() => this.cleanupMessageContent());
-          })
-        )
-        .subscribe(() => this.cleanupMessageContent());
-    } else {
-      this.chatService.sendMessage(
-        this.chat.chatId!,
-        <MessageRequest>{
-          content: content,
-          sender: this.me!,
-        }).subscribe(() => this.cleanupMessageContent());
-    }
-  }
-
-  getReceiver(id: string): Participant | undefined {
-    return this.participants.find(p => p.id === id);
-  }
-
   private startChatInternal() {
+    const chatName = this.chat.participants?.length! > 2
+      ? this.chat?.participants!.map(p => p.nickName).join(', ')
+      : this.chat?.participants!.find(p => p.id !== this.me?.id)?.nickName;
+
     return this.chatService.startChat(
-      this.participants!,
-      this.isGroupChat,
+      this.chat?.participants!!,
+      this.me!,
+      chatName!,
       this.overrideExisting
     );
   }
@@ -175,17 +259,21 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
           lastName: me.lastName,
           nickName: me.userName
         };
-        this.participants.push(this.me);
 
-        this.participants = [...this.participants, ...receivers.map(receiver => <Participant>{
-          id: receiver.id,
-          firstName: receiver.firstName,
-          lastName: receiver.lastName,
-          nickName: receiver.userName
-        })];
-        this.isGroupChat = params["isGroupChat"] == "true" || false;
         this.overrideExisting = params["overrideExisting"] == "true" || false;
-        this.chat = {...this.chat, chatId: params["chatId"]}
+        this.chat = {
+          ...this.chat,
+          chatId: params["chatId"],
+          participants: [
+            ...this.chat.participants!,
+            ...receivers.map(receiver => <Participant>{
+              id: receiver.id,
+              firstName: receiver.firstName,
+              lastName: receiver.lastName,
+              nickName: receiver.userName
+            }),
+            ...[this.me]]
+        }
       })
     );
   }
@@ -204,15 +292,18 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     this.chatService.chatAppendMessage$.subscribe((result) => {
-      if (result?.message) {
+      if (!result)
+        return;
+
+      if (result.message) {
         if (this.chat.messages.some(a => a.messageId === result?.message.messageId)) {
           return;
         }
 
-        result!.message!.statusString = this.statusString(result!.message?.status);
-        this.chat.messages.push(result!.message);
-        if (result?.update === true) {
-          this.chatService.updateMessageStatus(result!.message, MessageStatus.Seen);
+        result.message.statusString = this.statusString(result!.message?.status);
+        this.chat.messages.push(result.message);
+        if (result.update) {
+          this.chatService.updateMessageStatus(result.message, MessageStatus.Seen);
         }
         this.scrollToBottom();
       }
@@ -222,6 +313,12 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   private cleanupMessageContent() {
     this.chatGroup$?.controls.messageContent.patchValue('');
     this.scrollToBottom();
+  }
+
+  private cleanupFileMessage() {
+    this.selectedFile = undefined;
+    this.messagePlaceholder = this.messagePlaceholderDefault;
+    this.cleanupMessageContent();
   }
 
   private scrollToBottom(): void {

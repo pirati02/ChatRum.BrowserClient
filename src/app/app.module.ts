@@ -14,6 +14,8 @@ import {MatError, MatFormField, MatLabel, MatOption, MatSelect} from "@angular/m
 import {AccountInfoComponent} from "./routes/account-info/account-info.component";
 import {CreateAccountComponent} from "./routes/create-account/create-account.component";
 import {MatInput} from "@angular/material/input";
+import {ChatDetailsComponent} from "./routes/chat-details/chat-details.component";
+import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
 
 
 @NgModule({
@@ -24,7 +26,8 @@ import {MatInput} from "@angular/material/input";
     ChatComponent,
     AccountsComponent,
     AccountInfoComponent,
-    CreateAccountComponent
+    CreateAccountComponent,
+    ChatDetailsComponent
   ],
   imports: [
     CommonModule,
@@ -42,7 +45,10 @@ import {MatInput} from "@angular/material/input";
     MatLabel,
     MatError,
     MatInput,
-    FormsModule
+    FormsModule,
+    MatDialogActions,
+    MatDialogContent,
+    MatDialogTitle
   ]
 })
 export class AppModule {
