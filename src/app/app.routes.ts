@@ -3,6 +3,7 @@ import {ChatComponent} from './routes/chat/chat.component';
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {AccountInfoComponent} from "./routes/account-info/account-info.component";
 import {CreateAccountComponent} from "./routes/create-account/create-account.component";
+import {FeedComponent} from "./routes/feed/feed.component";
 
 export const routes: Routes = [
   {
@@ -15,6 +16,11 @@ export const routes: Routes = [
     title: 'მომხმარებელი',
     path: 'account-info/:accountId',
     component: AccountInfoComponent
+  },
+  {
+    title: 'მომხმარებელი',
+    path: 'feed/:accountId',
+    component: FeedComponent
   },
   {
     title: 'ახალი-მომხმარებელი',

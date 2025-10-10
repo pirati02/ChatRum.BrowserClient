@@ -16,6 +16,7 @@ import {CreateAccountComponent} from "./routes/create-account/create-account.com
 import {MatInput} from "@angular/material/input";
 import {ChatDetailsComponent} from "./routes/chat-details/chat-details.component";
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
+import {FeedComponent} from "./routes/feed/feed.component";
 
 
 @NgModule({
@@ -27,7 +28,8 @@ import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/mater
     AccountsComponent,
     AccountInfoComponent,
     CreateAccountComponent,
-    ChatDetailsComponent
+    ChatDetailsComponent,
+    FeedComponent
   ],
   imports: [
     CommonModule,
