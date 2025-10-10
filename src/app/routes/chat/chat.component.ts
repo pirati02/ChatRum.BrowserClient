@@ -13,13 +13,13 @@ import {Account} from "../../models/account";
 import {MatDialog} from "@angular/material/dialog";
 import {ChatDetailsComponent, ChatDetailsData} from "../chat-details/chat-details.component";
 import {ChatResponse} from "../../models/chat.response";
-import {ImageContent, PlainTextContent} from "../../models/message.content";
+import {ImageContent, MessageContent, PlainTextContent} from "../../models/message.content";
 import {HelperService} from "../../services/helper.service";
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | ''
 
 export interface UiMessage extends MessageResponse {
-  statusString: string
+  statusString: string,
 }
 
 interface Chat {
@@ -137,7 +137,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.helperService.isLink(content)){
       message = {
         ...message,
-        content: {
+        content: <MessageContent>{
           type: 'link',
           content: content,
         }

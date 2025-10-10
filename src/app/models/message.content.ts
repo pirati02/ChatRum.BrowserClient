@@ -2,6 +2,7 @@
 export interface MessageContent {
   content: string;
   type: 'plain' | 'link' | 'image';
+  $type: 'plain' | 'link' | 'image';
 }
 
 export interface PlainTextContent extends MessageContent {

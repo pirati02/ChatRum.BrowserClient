@@ -46,7 +46,7 @@
 <ng-template #senderTemplate let-message="message">
   <div class="d-flex flex-column message-box-mine" style="margin: 1.5rem">
     <span style="font-size: 0.6em; margin-bottom: 1rem">you</span>
-    <ng-container [ngSwitch]="message.content.$type">
+    <ng-container [ngSwitch]="message.content.$type || message.content.type">
       <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
                     [ngTemplateOutletContext]="{message: message}">
       </ng-container>
@@ -63,7 +63,7 @@
 <ng-template #receiverTemplate let-participant="participant" let-message="message">
   <div class="d-flex flex-column message-box-others" style="margin: 1.5rem">
     <span style="font-size: 0.6em; margin-bottom: 1rem">{{ participant?.nickName }}</span>
-    <ng-container [ngSwitch]="message.content.$type">
+    <ng-container [ngSwitch]="message.content.$type || message.content.type">
       <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
                     [ngTemplateOutletContext]="{message: message}">
       </ng-container>
@@ -80,7 +80,7 @@
 </ng-template>
 
 <ng-template #linkContent let-message="message">
-  <a style="font-size: 1.2em" [href]="message.content.content">{{ message.content.content }}</a>
+  <a style="font-size: 1.2em" [href]="message.content.content" target="_blank">{{ message.content.content }}</a>
 </ng-template>
 
 <ng-template #imageContent let-message="message" let-alignStyle="alignStyle">
