@@ -20,6 +20,11 @@
     useValue: 'http://localhost:5136/friendship'
   }
 
+  export var feedBaseUrlProvider: ValueProvider = <ValueProvider> {
+    provide: 'FEED_BASE_URL',
+    useValue: 'http://localhost:5136/feed'
+  }
+
   export const signalUrlProvider: ValueProvider = <ValueProvider>{
     provide: 'SIGNALR_URL',
     useValue: 'http://localhost:5136/hub/chat'
@@ -33,6 +38,7 @@
       accountsBaseUrlProvider,
       signalUrlProvider,
       friendshipBaseUrlProvider,
+      feedBaseUrlProvider,
       importProvidersFrom(AppModule), provideAnimationsAsync()
     ]
   };

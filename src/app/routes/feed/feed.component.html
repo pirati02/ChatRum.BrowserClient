@@ -1,6 +1,54 @@
-<div class="tab-list-footer-page">
+<div class="d-flex flex-column">
   <div class="header">სიახლეების ზოლი</div>
-  <div class="d-flex flex-column">
-    <app-account-info></app-account-info>
+
+  <app-account-info></app-account-info>
+
+  <div class="card p-3 mb-3 shadow-sm" style="margin-top: 2rem">
+    <form [formGroup]="newPostForm" (ngSubmit)="createPost()">
+      <div class="form-group mb-2">
+        <label>სათაური</label>
+        <input
+          type="text"
+          class="form-control"
+          formControlName="title"
+          placeholder="Enter post title"
+        />
+      </div>
+      <div class="form-group mb-3">
+        <label>აღწერა</label>
+        <textarea
+          class="form-control"
+          rows="3"
+          formControlName="description"
+          placeholder="Write something..."
+        ></textarea>
+      </div>
+      <button
+        class="btn btn-primary w-100"
+        type="submit"
+        [disabled]="submitting || newPostForm.invalid">
+        {{ submitting ? "Posting..." : "Post" }}
+      </button>
+    </form>
+  </div>
+
+  <div *ngIf="loading" class="text-center p-4">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <div *ngIf="!loading">
+    <ng-container *ngIf="postDocuments.length as count; else emptyFeed">
+      <div *ngFor="let post of postDocuments" class="card p-3 mb-3 shadow-sm" style="margin-top: 2rem">
+        <div class="text-muted mb-2">
+          <b>by {{ post.creator.firstName }} {{ post.creator.lastName }}</b>
+        </div>
+        <div class="fw-bold">{{ post.title }}</div>
+        <div>{{ post.description }}</div>
+      </div>
+    </ng-container>
+
+    <ng-template #emptyFeed>
+      <div class="text-center text-muted p-4">No posts yet. Create one above!</div>
+    </ng-template>
   </div>
 </div>
