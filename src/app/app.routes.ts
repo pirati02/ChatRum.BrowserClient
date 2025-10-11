@@ -1,9 +1,10 @@
 import {Routes} from '@angular/router';
 import {ChatComponent} from './routes/chat/chat.component';
 import {AccountsComponent} from "./routes/accounts/accounts.component";
-import {CreateAccountComponent} from "./routes/create-account/create-account.component";
+import {CreateAccountComponent} from "./routes/accounts/create-account/create-account.component";
 import {FeedComponent} from "./routes/feed/feed.component";
 import {AccountDetailsComponent} from "./routes/accounts/account-details/account-details.component";
+import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-account.component";
 
 export const routes: Routes = [
   {
@@ -14,7 +15,7 @@ export const routes: Routes = [
   },
   {
     title: 'მომხმარებელი',
-    path: 'account-details/:accountId',
+    path: 'account/:accountId',
     component: AccountDetailsComponent
   },
   {
@@ -26,6 +27,11 @@ export const routes: Routes = [
     title: 'ახალი-მომხმარებელი',
     path: 'account/new',
     component: CreateAccountComponent
+  },
+  {
+    title: 'ახალი-მომხმარებელი',
+    path: 'account/:accountId/modify',
+    component: ModifyAccountComponent
   },
   {
     title: 'მიმოწერა',

@@ -1,0 +1,59 @@
+<div class="create-account-page">
+  <div class="header">მომხმარებლის {{ account?.userName }} რედაქტირება</div>
+
+  <form [formGroup]="accountForm"
+        class="account-form d-flex flex-column"
+        (ngSubmit)="onSubmit()"
+        style="gap: 1rem; max-width: 500px;">
+
+    <!-- Username -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>მომხმარებლის სახელი</mat-label>
+      <input matInput type="text" formControlName="userName"/>
+      <mat-error *ngIf="accountForm.get('userName')?.invalid && accountForm.get('userName')?.touched">
+        სავალდებულოა (მინ. 3 სიმბოლო)
+      </mat-error>
+    </mat-form-field>
+
+    <!-- First Name -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>სახელი</mat-label>
+      <input matInput type="text" formControlName="firstName"/>
+      <mat-error *ngIf="accountForm.get('firstName')?.invalid && accountForm.get('firstName')?.touched">
+        სავალდებულოა
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Last Name -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>გვარი</mat-label>
+      <input matInput type="text" formControlName="lastName"/>
+      <mat-error *ngIf="accountForm.get('lastName')?.invalid && accountForm.get('lastName')?.touched">
+        სავალდებულოა
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Actions -->
+    <div class="d-flex flex-row" style="gap: 1rem; margin-top: 1rem;">
+      <button mat-flat-button color="primary"
+              type="submit"
+              [disabled]="accountForm.invalid || isSubmitting">
+
+        <!-- Spinner inside button -->
+        <mat-progress-spinner *ngIf="isSubmitting"
+                              diameter="20"
+                              mode="indeterminate"
+                              color="accent"
+                              style="margin-right: 0.5rem;">
+        </mat-progress-spinner>
+
+        <span *ngIf="!isSubmitting">შენახვა</span>
+        <span *ngIf="isSubmitting">იტვირთება...</span>
+      </button>
+
+      <button mat-stroked-button color="warn" type="button" (click)="onCancel()" [disabled]="isSubmitting">
+        გაუქმება
+      </button>
+    </div>
+  </form>
+</div>

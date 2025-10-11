@@ -12,13 +12,14 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {MatError, MatFormField, MatLabel, MatOption, MatSelect} from "@angular/material/select";
 import {AccountInfoComponent} from "./routes/accounts/account-info/account-info.component";
-import {CreateAccountComponent} from "./routes/create-account/create-account.component";
+import {CreateAccountComponent} from "./routes/accounts/create-account/create-account.component";
 import {MatInput} from "@angular/material/input";
 import {ChatDetailsComponent} from "./routes/chat-details/chat-details.component";
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
 import {FeedComponent} from "./routes/feed/feed.component";
 import {AccountDetailsComponent} from "./routes/accounts/account-details/account-details.component";
 import {AccountFriendsComponent} from "./routes/accounts/account-friends/account-friends.component";
+import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-account.component";
 
 
 @NgModule({
@@ -32,6 +33,7 @@ import {AccountFriendsComponent} from "./routes/accounts/account-friends/account
     AccountDetailsComponent,
     AccountFriendsComponent,
     CreateAccountComponent,
+    ModifyAccountComponent,
     ChatDetailsComponent,
     FeedComponent
   ],

@@ -2,7 +2,7 @@ import {Component, EventEmitter, OnInit, Output} from "@angular/core";
 import {AccountsService} from "../../../services/accounts.service";
 import {finalize, forkJoin, tap} from "rxjs";
 import {Account} from "../../../models/account";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-account-info',
@@ -18,7 +18,8 @@ export class AccountInfoComponent implements OnInit {
 
   constructor(
     private accountsService: AccountsService,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private router: Router
   ) {
   }
 
@@ -47,6 +48,10 @@ export class AccountInfoComponent implements OnInit {
         })
       )
       .subscribe()
+  }
+
+  modifyAccount(){
+    this.router.navigate([`account/${this.account?.id}/modify`]);
   }
 
   private loadAccountDetails(accountId: string) {

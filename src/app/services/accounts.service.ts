@@ -41,4 +41,9 @@ export class AccountsService{
     return this.httpClient
       .patch<boolean>(this.baseUrl + '/' + accountId + '/resend-code',{})
   }
+
+  updateAccount(accountId: string, account: Account) {
+    return this.httpClient
+      .put<string>(this.baseUrl + '/' + accountId, account)
+  }
 }

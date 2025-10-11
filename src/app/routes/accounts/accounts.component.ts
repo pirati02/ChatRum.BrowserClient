@@ -40,6 +40,6 @@ export class AccountsComponent implements OnInit {
   }
 
   openAccountDetails(accountId: string) {
-    this.router.navigate([`account-details/${accountId}`]).then();
+    this.router.navigate([`account/${accountId}`]).then();
   }
 }

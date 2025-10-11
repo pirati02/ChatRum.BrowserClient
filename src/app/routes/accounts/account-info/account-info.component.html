@@ -30,6 +30,10 @@
         <span>{{ account?.isVerified ? '✅ Yes' : '❌ No' }}</span>
       </div>
     </div>
+
+    <button mat-stroked-button color="accent" (click)="modifyAccount()">
+      Modify Account
+    </button>
   </div>
 
   <!-- ✅ Verification Section -->
