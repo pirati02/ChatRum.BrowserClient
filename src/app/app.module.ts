@@ -11,12 +11,14 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {AccountsComponent} from "./routes/accounts/accounts.component";
 import {MatError, MatFormField, MatLabel, MatOption, MatSelect} from "@angular/material/select";
-import {AccountInfoComponent} from "./routes/account-info/account-info.component";
+import {AccountInfoComponent} from "./routes/accounts/account-info/account-info.component";
 import {CreateAccountComponent} from "./routes/create-account/create-account.component";
 import {MatInput} from "@angular/material/input";
 import {ChatDetailsComponent} from "./routes/chat-details/chat-details.component";
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
 import {FeedComponent} from "./routes/feed/feed.component";
+import {AccountDetailsComponent} from "./routes/accounts/account-details/account-details.component";
+import {AccountFriendsComponent} from "./routes/accounts/account-friends/account-friends.component";
 
 
 @NgModule({
@@ -27,6 +29,8 @@ import {FeedComponent} from "./routes/feed/feed.component";
     ChatComponent,
     AccountsComponent,
     AccountInfoComponent,
+    AccountDetailsComponent,
+    AccountFriendsComponent,
     CreateAccountComponent,
     ChatDetailsComponent,
     FeedComponent

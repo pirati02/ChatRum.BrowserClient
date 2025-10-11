@@ -1,0 +1,27 @@
+<div class="tab-list-footer-page">
+  <div class="header">მომხმარებელი</div>
+  <div class="d-flex flex-column">
+    <app-account-info (onAccount)="account = $event"></app-account-info>
+
+    <div class="d-flex flex-row" style="margin-top: 2rem">
+      <!-- Friends Chats -->
+      <div class="d-flex flex-column"  style="flex-grow: 1" *ngIf="friends.length > 0">
+        <span>მესენჯერი</span>
+        <div class="d-flex flex-column">
+          <div class="card" *ngFor="let chat of chats">
+            <ng-container>
+              <div class="card-body">
+                <p class="card-title" style="font-size: 0.8em">{{ chat.message.sender.nickName }}</p>
+                <h1 class="card-title" style="font-size: 1em">{{ chat.message.content.content }}</h1>
+              </div>
+              <button class="card-btn" (click)="openChat(chat)">Open chat</button>
+            </ng-container>
+            <mat-divider style="margin: 0.4rem"></mat-divider>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <app-account-friends (onFriends)="friends = $event"></app-account-friends>
+  </div>
+</div>
