@@ -113,7 +113,7 @@ export class ChatService {
       .post<boolean>(this.baseUrl + `/mark-as-read/${chatId}`, messageIds);
   }
 
-  findTop10Conversation(accountId: string, friendIds: string[]): Observable<LastChatResponse[]> {
+  findTop10Conversation(accountId: string, friendIds: string[] = []): Observable<LastChatResponse[]> {
     let params = new HttpParams();
     friendIds.forEach(id => {
       params = params.append('ids', id);

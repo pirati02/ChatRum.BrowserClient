@@ -8,11 +8,11 @@ import {LastestMessage} from "../../../models/latest-message.response";
 import {PeerExtended} from "../account-friends/account-friends.component";
 
 @Component({
-  selector: 'app-account-details',
-  templateUrl: './account-details.component.html',
-  styleUrls: ['./account-details.component.scss']
+  selector: 'app-account',
+  templateUrl: './account.component.html',
+  styleUrls: ['./account.component.scss']
 })
-export class AccountDetailsComponent implements OnInit {
+export class AccountComponent implements OnInit {
 
   account?: Account;
   friends: PeerExtended[] = [];
@@ -59,5 +59,14 @@ export class AccountDetailsComponent implements OnInit {
         receivers: JSON.stringify(selectedFriends)
       }
     }).then();
+  }
+
+  loadAccount($event: Account) {
+    this.account = $event;
+    this.chatService.findTop10Conversation(this.account.id)
+      .subscribe(chats => {
+        this.chats = chats;
+      });
+    this.chatService.startConnection(this.account.id)
   }
 }

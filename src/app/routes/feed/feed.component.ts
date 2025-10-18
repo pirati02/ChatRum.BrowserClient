@@ -1,8 +1,11 @@
-import { Component, OnInit } from "@angular/core";
-import { FeedService } from "../../services/feed.service";
-import { finalize, Observable, of, tap } from "rxjs";
-import { PostDocumentResponse } from "../../models/post.response";
-import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import {Component, OnInit} from "@angular/core";
+import {FeedService} from "../../services/feed.service";
+import {finalize, Observable, of, tap} from "rxjs";
+import {PostDocumentResponse} from "../../models/post.response";
+import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import {ActivatedRoute} from "@angular/router";
+import {AccountsService} from "../../services/accounts.service";
+import {Account} from "../../models/account";
 
 @Component({
   selector: "app-feed",
@@ -14,15 +17,29 @@ export class FeedComponent implements OnInit {
   postDocuments: PostDocumentResponse[] = [];
   newPostForm!: FormGroup;
   submitting = false;
+  account?: Account;
 
   constructor(
     private feedService: FeedService,
-    private fb: FormBuilder
-  ) {}
+    private accountsService: AccountsService,
+    private fb: FormBuilder,
+    private activatedRoute: ActivatedRoute,
+  ) {
+  }
 
   ngOnInit(): void {
+    this.activatedRoute.params.subscribe(params => {
+      const accountId = params['accountId'] as string;
+      this.accountsService.loadAccount(accountId)
+        .pipe(
+          tap(account => {
+            this.account = account;
+            this.loadFeed();
+          }))
+        .subscribe();
+    });
+
     this.initForm();
-    this.loadFeed();
   }
 
   private initForm(): void {
@@ -34,7 +51,7 @@ export class FeedComponent implements OnInit {
 
   private loadFeed(): void {
     this.loading = true;
-    this.feedService.getShuffledFeed().pipe(
+    this.feedService.getShuffledFeed(this.account?.id!).pipe(
       tap((posts) => {
         this.postDocuments = posts;
       }),
@@ -48,7 +65,14 @@ export class FeedComponent implements OnInit {
       return;
     }
 
-    const newPost = this.newPostForm.value;
+    const newPost = {
+      ...this.newPostForm.value, creator: {
+        id: this.account?.id,
+        firstName: this.account?.firstName,
+        lastName: this.account?.lastName,
+        nickName: this.account?.userName
+      }
+    };
     this.submitting = true;
 
     this.feedService

@@ -14,9 +14,13 @@ export class FeedService {
 
   }
 
-  getShuffledFeed() {
+  getShuffledFeed(creatorId: string, limit: number = 10) {
     return this.httpClient
-      .get<PostDocumentResponse[]>(this.baseUrl)
+      .get<PostDocumentResponse[]>(this.baseUrl + `/shuffled/${creatorId}`, {
+        params: {
+          limit: limit.toString()
+        }
+      })
   }
 
   createPost(post: CreatePostRequest) {

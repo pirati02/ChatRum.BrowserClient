@@ -1,7 +1,7 @@
 <div class="tab-list-footer-page">
   <div class="header">მომხმარებელი</div>
   <div class="d-flex flex-column">
-    <app-account-info (onAccount)="account = $event"></app-account-info>
+    <app-account-info (onAccount)="loadAccount($event)"></app-account-info>
 
     <div class="d-flex flex-row" style="margin-top: 2rem">
       <!-- Friends Chats -->

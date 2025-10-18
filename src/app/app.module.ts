@@ -17,7 +17,7 @@ import {MatInput} from "@angular/material/input";
 import {ChatDetailsComponent} from "./routes/chat-details/chat-details.component";
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
 import {FeedComponent} from "./routes/feed/feed.component";
-import {AccountDetailsComponent} from "./routes/accounts/account-details/account-details.component";
+import {AccountComponent} from "./routes/accounts/account-details/account.component";
 import {AccountFriendsComponent} from "./routes/accounts/account-friends/account-friends.component";
 import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-account.component";
 
@@ -30,7 +30,7 @@ import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-ac
     ChatComponent,
     AccountsComponent,
     AccountInfoComponent,
-    AccountDetailsComponent,
+    AccountComponent,
     AccountFriendsComponent,
     CreateAccountComponent,
     ModifyAccountComponent,
