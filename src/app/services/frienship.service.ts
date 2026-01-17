@@ -1,6 +1,7 @@
 import {Inject, Injectable} from "@angular/core";
 import {HttpClient} from "@angular/common/http";
 import {PeerResponse} from "../models/peer.response";
+import {Peer} from "../models/peer";
 import {map, Observable} from "rxjs";
 
 @Injectable({
@@ -24,26 +25,29 @@ export class FriendshipService {
     return this.httpClient.get<PeerResponse[]>(`${this.baseUrl}/${peerId}/sent-requests`);
   }
 
-  sendFriendRequest(peerId: string, requestedPeerId: string): Observable<boolean> {
-    return this.httpClient.put(`${this.baseUrl}/${peerId}/request`, {
-      peerId: requestedPeerId
+  sendFriendRequest(peer1: Peer, peer2: Peer): Observable<boolean> {
+    return this.httpClient.post(`${this.baseUrl}/request`, {
+      peer1,
+      peer2
     }).pipe(
       map(response => !!response),
     );
   }
 
-  acceptFriendRequest(peerId: string, requestedPeerId: string) {
-    return this.httpClient.put(`${this.baseUrl}/${peerId}/accept`, {
-      peerId: requestedPeerId
+  acceptFriendRequest(peer1: Peer, peer2: Peer) {
+    return this.httpClient.post(`${this.baseUrl}/accept`, {
+      peer1,
+      peer2
     }).pipe(
       map(response => !!response),
     );
   }
 
-  unfriendRequest(peerId: string, requestedPeerId: string) {
-    return this.httpClient.delete(`${this.baseUrl}/${peerId}/unfriend`, {
+  unfriendRequest(peer1: Peer, peer2: Peer) {
+    return this.httpClient.delete(`${this.baseUrl}/unfriend`, {
       body: {
-        peerId: requestedPeerId
+        peer1,
+        peer2
       }
     });
   }

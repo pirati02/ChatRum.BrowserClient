@@ -22,6 +22,6 @@
       </div>
     </div>
 
-    <app-account-friends (onFriends)="friends = $event"></app-account-friends>
+    <app-account-friends [account]="account" (onFriends)="friends = $event"></app-account-friends>
   </div>
 </div>

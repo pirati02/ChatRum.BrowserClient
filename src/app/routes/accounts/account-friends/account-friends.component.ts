@@ -5,6 +5,7 @@ import {Account} from "../../../models/account";
 import {ActivatedRoute, Router} from "@angular/router";
 import {PeerResponse} from "../../../models/peer.response";
 import {FriendshipService} from "../../../services/frienship.service";
+import { Peer } from "../../../models/peer";
 
 export interface PeerExtended extends PeerResponse {
   checked: boolean
@@ -57,7 +58,11 @@ export class AccountFriendsComponent implements OnInit {
   }
 
   sendFriendRequest(account: Account) {
-    this.friendshipService.sendFriendRequest(this.account?.id!, account.id)
+    const peer2: Peer = {
+      peerId:  account.id,
+      userName: account.userName
+    };
+    this.friendshipService.sendFriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
           this.loadAccountFriends(this.account?.id!);
@@ -67,7 +72,11 @@ export class AccountFriendsComponent implements OnInit {
   }
 
   unfriend(friend: PeerResponse) {
-    this.friendshipService.unfriendRequest(this.account?.id!, friend.peerId)
+    const peer2: Peer = {
+      peerId:  friend.peerId,
+      userName: friend.userName
+    };
+    this.friendshipService.unfriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
           this.loadAccountFriends(this.account?.id!);
@@ -77,7 +86,11 @@ export class AccountFriendsComponent implements OnInit {
   }
 
   acceptFriend(friend: PeerResponse) {
-    this.friendshipService.acceptFriendRequest(this.account?.id!, friend.peerId)
+    const peer2: Peer = {
+      peerId:  friend.peerId,
+      userName: friend.userName
+    };
+    this.friendshipService.acceptFriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
           this.loadAccountFriends(this.account?.id!);
@@ -109,37 +122,51 @@ export class AccountFriendsComponent implements OnInit {
 
   private loadAccountFriends(accountId: string) {
     forkJoin([
-      this.friendshipService.getFriendRequests(accountId)
-        .pipe(
-          tap(friends => {
-            this.receivedFriendRequests = friends;
-          })
-        ),
-      this.friendshipService.getFriendRequestsISent(accountId)
-        .pipe(
-          tap(friends => {
-            this.sentFriendRequests = friends;
-          })
-        ),
-      this.friendshipService.getFriends(accountId)
-        .pipe(
-          map(friends => {
-            const friendIds = friends
-              .filter((_, index) => index <= 10)
-              .map(item => item.peerId);
-
-            this.friends = friends.map(friend => {
-              return {
-                ...friend,
-                chat: null,
-                checked: false
-              }
-            });
-
-            this.onFriends.emit(this.friends);
-          })
-        )
+      this.friendshipService.getFriendRequests(accountId),
+      this.friendshipService.getFriendRequestsISent(accountId),
+      this.friendshipService.getFriends(accountId),
+      this.accountsService.loadAccounts()
     ])
+      .pipe(
+        tap(([receivedRequests, sentRequests, friends, allAccounts]) => {
+          // Update component properties
+          this.receivedFriendRequests = receivedRequests;
+          this.sentFriendRequests = sentRequests;
+          
+          this.friends = friends.map(friend => ({
+            ...friend,
+            chat: null,
+            checked: false
+          }));
+
+          // Get all user IDs that should be filtered out
+          const currentUserId = accountId;
+          const friendIds = friends.map(f => f.peerId);
+          const receivedRequestIds = receivedRequests.map(r => r.peerId);
+          const sentRequestIds = sentRequests.map(s => s.peerId);
+          
+          const excludedIds = new Set([
+            currentUserId,
+            ...friendIds,
+            ...receivedRequestIds,
+            ...sentRequestIds
+          ]);
+
+          // Filter accounts to show only those not already connected
+          this.randomAccounts = allAccounts.filter(account => 
+            !excludedIds.has(account.id)
+          );
+
+          this.onFriends.emit(this.friends);
+        })
+      )
       .subscribe();
+  }
+
+  private get peer1(): Peer {
+    return <Peer> {
+      peerId: this.account?.id!,
+      userName: this.account?.userName
+    }
   }
 }
