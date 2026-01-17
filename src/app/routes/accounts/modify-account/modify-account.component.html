@@ -1,5 +1,5 @@
 <div class="create-account-page">
-  <div class="header">მომხმარებლის {{ account?.userName }} რედაქტირება</div>
+  <div class="header">Edit {{ account?.userName }}</div>
 
   <form [formGroup]="accountForm"
         class="account-form d-flex flex-column"
@@ -8,28 +8,28 @@
 
     <!-- Username -->
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>მომხმარებლის სახელი</mat-label>
+      <mat-label>Username</mat-label>
       <input matInput type="text" formControlName="userName"/>
       <mat-error *ngIf="accountForm.get('userName')?.invalid && accountForm.get('userName')?.touched">
-        სავალდებულოა (მინ. 3 სიმბოლო)
+        required (min 3 symbols)
       </mat-error>
     </mat-form-field>
 
     <!-- First Name -->
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>სახელი</mat-label>
+      <mat-label>First Name</mat-label>
       <input matInput type="text" formControlName="firstName"/>
       <mat-error *ngIf="accountForm.get('firstName')?.invalid && accountForm.get('firstName')?.touched">
-        სავალდებულოა
+        required
       </mat-error>
     </mat-form-field>
 
     <!-- Last Name -->
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>გვარი</mat-label>
+      <mat-label>Last Name</mat-label>
       <input matInput type="text" formControlName="lastName"/>
       <mat-error *ngIf="accountForm.get('lastName')?.invalid && accountForm.get('lastName')?.touched">
-        სავალდებულოა
+        required
       </mat-error>
     </mat-form-field>
 
@@ -47,12 +47,12 @@
                               style="margin-right: 0.5rem;">
         </mat-progress-spinner>
 
-        <span *ngIf="!isSubmitting">შენახვა</span>
-        <span *ngIf="isSubmitting">იტვირთება...</span>
+        <span *ngIf="!isSubmitting">Save</span>
+        <span *ngIf="isSubmitting">loading...</span>
       </button>
 
       <button mat-stroked-button color="warn" type="button" (click)="onCancel()" [disabled]="isSubmitting">
-        გაუქმება
+        Cancel
       </button>
     </div>
   </form>

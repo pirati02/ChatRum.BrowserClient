@@ -1,12 +1,12 @@
 <div class="tab-list-footer-page">
-  <div class="header">მომხმარებელი</div>
+  <div class="header">Account</div>
   <div class="d-flex flex-column">
     <app-account-info (onAccount)="loadAccount($event)"></app-account-info>
 
     <div class="d-flex flex-row" style="margin-top: 2rem">
       <!-- Friends Chats -->
       <div class="d-flex flex-column"  style="flex-grow: 1" *ngIf="friends.length > 0">
-        <span>მესენჯერი</span>
+        <span>Messenger</span>
         <div class="d-flex flex-column">
           <div class="card" *ngFor="let chat of chats">
             <ng-container>

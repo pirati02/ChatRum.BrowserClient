@@ -1,7 +1,7 @@
 <div class="d-flex flex-column" style="gap: 1rem;">
   <!-- Friends Section -->
   <div class="d-flex flex-column" style="flex-grow: 1" *ngIf="friends.length > 0">
-    <span>მეგობრები</span>
+    <span>Friends</span>
     <div class="d-flex flex-column">
       <div class="friend" *ngFor="let friend of friends">
         <h3>{{ friend.userName }}</h3>
@@ -19,7 +19,7 @@
 
   <mat-divider [vertical]="true"></mat-divider>
   <div class="d-flex flex-column" *ngIf="receivedFriendRequests.length > 0">
-    <span>მეგრობრის დამატების მოთხოვნები</span>
+    <span>Requests</span>
     <div class="card" *ngFor="let friendRequest of receivedFriendRequests">
       <div class="card-body">
         <h3 class="card-title">{{ friendRequest.userName }}</h3>
@@ -28,7 +28,7 @@
     </div>
   </div>
   <div class="d-flex flex-column" *ngIf="randomAccounts.length > 0">
-    <span>სხვა მომხმარებლები</span>
+    <span>Other Accounts</span>
     <div class="card" *ngFor="let account of randomAccounts">
       <div class="card-body">
         <h3 class="card-title">{{ account.userName }}</h3>

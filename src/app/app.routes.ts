@@ -8,33 +8,33 @@ import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-ac
 
 export const routes: Routes = [
   {
-    title: 'მომხმარებლები',
+    title: 'Accounts',
     path: '',
     component: AccountsComponent,
     pathMatch: 'full'
   },
   {
-    title: 'მომხმარებელი',
-    path: 'account/:accountId',
+    title: 'Account Details',
+    path: 'account-details/:accountId',
     component: AccountComponent
   },
   {
-    title: 'მომხმარებელი',
+    title: 'Account Details',
     path: 'feed/:accountId',
     component: FeedComponent
   },
   {
-    title: 'ახალი-მომხმარებელი',
+    title: 'New Account',
     path: 'account/new',
     component: CreateAccountComponent
   },
   {
-    title: 'ახალი-მომხმარებელი',
+    title: 'New Account',
     path: 'account/:accountId/modify',
     component: ModifyAccountComponent
   },
   {
-    title: 'მიმოწერა',
+    title: 'Messenger',
     path: 'chat',
     component: ChatComponent
   }

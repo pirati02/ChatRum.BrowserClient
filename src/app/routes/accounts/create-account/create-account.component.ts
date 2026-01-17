@@ -47,7 +47,7 @@ export class CreateAccountComponent implements OnInit {
       .subscribe({
         next: (accountId: string) => {
           this.isSubmitting = false;
-          this.router.navigate([`account-info/${accountId}`]);
+          this.router.navigate([`account-details/${accountId}`]);
         },
         error: (err) => {
           console.error('Failed to create account', err);

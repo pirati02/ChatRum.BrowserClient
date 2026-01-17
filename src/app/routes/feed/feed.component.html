@@ -1,54 +1,132 @@
-<div class="d-flex flex-column">
-  <div class="header">სიახლეების ზოლი</div>
+<div class="feed-container">
+  <!-- Header Section -->
+  <header class="feed-header">
+    <h1 class="feed-title">Feed</h1>
+    <p class="feed-subtitle">Share your thoughts and connect with others</p>
+  </header>
 
-  <app-account-info></app-account-info>
-
-  <div class="card p-3 mb-3 shadow-sm" style="margin-top: 2rem">
-    <form [formGroup]="newPostForm" (ngSubmit)="createPost()">
-      <div class="form-group mb-2">
-        <label>სათაური</label>
-        <input
-          type="text"
-          class="form-control"
-          formControlName="title"
-          placeholder="Enter post title"
-        />
-      </div>
-      <div class="form-group mb-3">
-        <label>აღწერა</label>
-        <textarea
-          class="form-control"
-          rows="3"
-          formControlName="description"
-          placeholder="Write something..."
-        ></textarea>
-      </div>
-      <button
-        class="btn btn-primary w-100"
-        type="submit"
-        [disabled]="submitting || newPostForm.invalid">
-        {{ submitting ? "Posting..." : "Post" }}
-      </button>
-    </form>
+  <!-- Account Info Section -->
+  <div class="account-section">
+    <app-account-info></app-account-info>
   </div>
 
-  <div *ngIf="loading" class="text-center p-4">
-    <div class="spinner-border text-primary" role="status"></div>
-  </div>
-
-  <div *ngIf="!loading">
-    <ng-container *ngIf="postDocuments.length as count; else emptyFeed">
-      <div *ngFor="let post of postDocuments" class="card p-3 mb-3 shadow-sm" style="margin-top: 2rem">
-        <div class="text-muted mb-2">
-          <b>by {{ post.creator.firstName }} {{ post.creator.lastName }}</b>
+  <div class="feed-content">
+    <!-- Create Post Section -->
+    <section class="create-post-section">
+      <div class="create-post-card">
+        <div class="create-post-header">
+          <h2>Create a New Post</h2>
+          <span class="create-post-icon">✨</span>
         </div>
-        <div class="fw-bold">{{ post.title }}</div>
-        <div>{{ post.description }}</div>
+        
+        <form [formGroup]="newPostForm" (ngSubmit)="createPost()" class="create-post-form">
+          <div class="form-group">
+            <label for="title" class="form-label">Title</label>
+            <input
+              id="title"
+              type="text"
+              class="form-control"
+              formControlName="title"
+              placeholder="What's on your mind?"
+            />
+            <div *ngIf="newPostForm.get('title')?.invalid && newPostForm.get('title')?.touched" 
+                 class="form-error">
+              Title is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea
+              id="description"
+              class="form-control"
+              rows="4"
+              formControlName="description"
+              placeholder="Share your story, thoughts, or experiences..."
+            ></textarea>
+            <div *ngIf="newPostForm.get('description')?.invalid && newPostForm.get('description')?.touched" 
+                 class="form-error">
+              Description is required
+            </div>
+          </div>
+          
+          <button
+            type="submit"
+            class="post-submit-btn"
+            [disabled]="submitting || newPostForm.invalid"
+            [class.loading]="submitting">
+            <span *ngIf="!submitting" class="btn-content">
+              <span class="btn-icon">📝</span>
+              <span>Publish Post</span>
+            </span>
+            <span *ngIf="submitting" class="btn-loading">
+              <span class="spinner"></span>
+              <span>Publishing...</span>
+            </span>
+          </button>
+        </form>
       </div>
-    </ng-container>
+    </section>
 
-    <ng-template #emptyFeed>
-      <div class="text-center text-muted p-4">No posts yet. Create one above!</div>
-    </ng-template>
+    <!-- Feed Posts Section -->
+    <section class="feed-posts-section">
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading posts...</p>
+      </div>
+
+      <div *ngIf="!loading" class="posts-container">
+        <ng-container *ngIf="postDocuments.length > 0; else emptyFeed">
+          <h3 class="posts-header">Recent Posts</h3>
+          <div class="posts-grid">
+            <article *ngFor="let post of postDocuments; trackBy: trackByPostId" 
+                     class="post-card">
+              <div class="post-header">
+                <div class="author-avatar">
+                  {{ getAuthorInitials(post.creator.firstName, post.creator.lastName) }}
+                </div>
+                <div class="author-info">
+                  <h4 class="author-name">
+                    {{ post.creator.firstName }} {{ post.creator.lastName }}
+                  </h4>
+                  <p class="post-time">Just now</p>
+                </div>
+              </div>
+              
+              <div class="post-content">
+                <h3 class="post-title">{{ post.title }}</h3>
+                <p class="post-description">{{ post.description }}</p>
+              </div>
+              
+              <div class="post-footer">
+                <button class="post-action-btn">
+                  <span class="action-icon">👍</span>
+                  <span>Like</span>
+                </button>
+                <button class="post-action-btn">
+                  <span class="action-icon">💬</span>
+                  <span>Comment</span>
+                </button>
+                <button class="post-action-btn">
+                  <span class="action-icon">📤</span>
+                  <span>Share</span>
+                </button>
+              </div>
+            </article>
+          </div>
+        </ng-container>
+
+        <ng-template #emptyFeed>
+          <div class="empty-feed">
+            <div class="empty-feed-icon">📝</div>
+            <h3>No posts yet!</h3>
+            <p>Be the first to share something amazing with the community.</p>
+            <button class="create-first-post-btn" (click)="scrollToCreatePost()">
+              Create Your First Post
+            </button>
+          </div>
+        </ng-template>
+      </div>
+    </section>
   </div>
 </div>
