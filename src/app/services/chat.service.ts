@@ -23,9 +23,11 @@ export class ChatService {
     update: boolean
   } | null>(null);
   private updateMessageStateSubject = new BehaviorSubject<{ messageId: string, status: MessageStatus } | null>(null);
+  private messageFailedSubject = new BehaviorSubject<UiMessage | null>(null);
 
   chatAppendMessage$ = this.chatAppendMessageSubject.asObservable();
   updateMessageState$ = this.updateMessageStateSubject.asObservable();
+  messageFailed$ = this.messageFailedSubject.asObservable();
   chatStarted$ = this.chatCreatedSubject.asObservable();
 
   constructor(
@@ -50,6 +52,10 @@ export class ChatService {
 
     this.hubConnection.on('ChatStarted', (chatId: string) => {
       this.chatCreatedSubject.next(chatId);
+    });
+
+    this.hubConnection.on('MessageFailed', (message: UiMessage) => {
+      this.messageFailedSubject.next(message);
     });
 
     this.hubConnection.on('MessageSent', (message: UiMessage, update: boolean) => {

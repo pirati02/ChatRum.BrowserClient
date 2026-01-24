@@ -16,7 +16,7 @@ import {ChatResponse} from "../../models/chat.response";
 import {ImageContent, MessageContent, PlainTextContent} from "../../models/message.content";
 import {HelperService} from "../../services/helper.service";
 
-export type uiStatus = 'sent' | 'seen' | 'delivered' | ''
+export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | ''
 
 export interface UiMessage extends MessageResponse {
   statusString: string,
@@ -130,11 +130,11 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let message: MessageRequest = {
       sender: this.me!,
-      content: <PlainTextContent>{ type: 'plain', content: content },
+      content: <PlainTextContent>{type: 'plain', content: content},
       replyOf: null
     };
 
-    if (this.helperService.isLink(content)){
+    if (this.helperService.isLink(content)) {
       message = {
         ...message,
         content: <MessageContent>{
@@ -164,7 +164,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       const base64 = (reader.result as string).split(",")[1];
       const message: MessageRequest = {
         sender: this.me!,
-        content: <ImageContent>{ type: 'image', content: base64 },
+        content: <ImageContent>{type: 'image', content: base64},
         replyOf: null
       };
 
@@ -199,6 +199,23 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         createdDate: this.chat.createdDate
       }
     });
+  }
+
+  retryMessage(message: UiMessage) {
+    if (!this.chat.chatId) return;
+
+    const messageRequest: MessageRequest = {
+      sender: message.sender,
+      content: message.content,
+      replyOf: message.replyOf
+    };
+
+    // Reset status to indicate sending
+    message.status = MessageStatus.Sent;
+    message.statusString = this.statusString(MessageStatus.Sent);
+
+    this.chatService.sendMessage(this.chat.chatId, messageRequest)
+      .subscribe();
   }
 
   getReceiver(id: string): Participant | undefined {
@@ -283,11 +300,11 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       this.chat.chatId = res!;
     });
 
-    this.chatService.updateMessageState$.subscribe((res) => {
-      if (res?.messageId) {
-        const message = this.chat.messages.find(item => item.messageId === res?.messageId);
-        message!.statusString = this.statusString(res?.status);
-        message!.status = res?.status;
+    this.chatService.updateMessageState$.subscribe((result) => {
+      if (result?.messageId) {
+        const message = this.chat.messages.find(item => item.messageId === result?.messageId);
+        message!.statusString = this.statusString(result?.status);
+        message!.status = result?.status;
       }
     });
 
@@ -305,6 +322,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         if (result.update) {
           this.chatService.updateMessageStatus(result.message, MessageStatus.Seen);
         }
+        this.scrollToBottom();
+      }
+    });
+
+    this.chatService.messageFailed$.subscribe((result) => {
+      if (!result) return;
+
+      const message = this.chat.messages.find(item => item.messageId === result.messageId);
+      if (message) {
+        message.status = MessageStatus.Failed;
+        message.statusString = this.statusString(MessageStatus.Failed);
+      } else {
+        // Message doesn't exist in UI, add it as failed
+        result.status = MessageStatus.Failed;
+        result.statusString = this.statusString(MessageStatus.Failed);
+        this.chat.messages.push(result);
         this.scrollToBottom();
       }
     });
@@ -328,14 +361,20 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private statusString(status: MessageStatus): uiStatus {
+  private statusString(status: 'Seen' | 'Sent' | 'Delivered' | 'Failed' | MessageStatus): uiStatus {
     switch (status) {
+      case 'Sent':
       case MessageStatus.Sent:
         return "sent";
+      case 'Delivered':
       case MessageStatus.Delivered:
         return "delivered";
+      case 'Seen':
       case MessageStatus.Seen:
         return "seen";
+      case 'Failed':
+      case MessageStatus.Failed:
+        return "failed";
       default:
         return '';
     }
