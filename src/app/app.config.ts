@@ -27,9 +27,14 @@ export var feedBaseUrlProvider: ValueProvider = <ValueProvider>{
   useValue: `${ocelotBaseUrl}/feed`
 }
 
-export const signalUrlProvider: ValueProvider = <ValueProvider>{
-  provide: 'SIGNALR_URL',
+export const chatSignalUrlProvider: ValueProvider = <ValueProvider>{
+  provide: 'CHAT_SIGNALR_URL',
   useValue: `${ocelotBaseUrl}/hub/chat`
+}
+
+export const friendshipSignalUrlProvider: ValueProvider = <ValueProvider>{
+  provide: 'FRIENDSHIP_SIGNALR_URL',
+  useValue: `${ocelotBaseUrl}/hub/friendship`
 }
 
 export const appConfig: ApplicationConfig = {
@@ -38,7 +43,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     chatBaseUrlProvider,
     accountsBaseUrlProvider,
-    signalUrlProvider,
+    chatSignalUrlProvider,
+    friendshipSignalUrlProvider,
     friendshipBaseUrlProvider,
     feedBaseUrlProvider,
     importProvidersFrom(AppModule), provideAnimationsAsync()

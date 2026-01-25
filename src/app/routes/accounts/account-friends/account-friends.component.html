@@ -27,6 +27,15 @@
       </div>
     </div>
   </div>
+  <div class="d-flex flex-column" *ngIf="sentFriendRequests.length > 0">
+    <span>Sent Requests</span>
+    <div class="card" *ngFor="let sentRequest of sentFriendRequests">
+      <div class="card-body">
+        <h3 class="card-title">{{ sentRequest.userName }}</h3>
+        <span>⏳ Pending</span>
+      </div>
+    </div>
+  </div>
   <div class="d-flex flex-column" *ngIf="randomAccounts.length > 0">
     <span>Other Accounts</span>
     <div class="card" *ngFor="let account of randomAccounts">

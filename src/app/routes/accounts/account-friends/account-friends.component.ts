@@ -1,11 +1,11 @@
-import {Component, EventEmitter, Input, OnInit, Output} from "@angular/core";
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from "@angular/core";
 import {AccountsService} from "../../../services/accounts.service";
-import {finalize, forkJoin, map, tap} from "rxjs";
+import {delay, empty, finalize, forkJoin, Subscription, tap} from "rxjs";
 import {Account} from "../../../models/account";
 import {ActivatedRoute, Router} from "@angular/router";
 import {PeerResponse} from "../../../models/peer.response";
 import {FriendshipService} from "../../../services/frienship.service";
-import { Peer } from "../../../models/peer";
+import {Peer} from "../../../models/peer";
 
 export interface PeerExtended extends PeerResponse {
   checked: boolean
@@ -17,7 +17,7 @@ export interface PeerExtended extends PeerResponse {
   templateUrl: './account-friends.component.html',
   styleUrls: ['./account-friends.component.scss']
 })
-export class AccountFriendsComponent implements OnInit {
+export class AccountFriendsComponent implements OnInit, OnDestroy {
 
   @Input() account?: Account;
   @Output() onFriends = new EventEmitter<PeerExtended[]>();
@@ -26,6 +26,8 @@ export class AccountFriendsComponent implements OnInit {
   randomAccounts: Account[] = [];
   receivedFriendRequests: PeerResponse[] = [];
   sentFriendRequests: PeerResponse[] = [];
+
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private accountsService: AccountsService,
@@ -39,7 +41,34 @@ export class AccountFriendsComponent implements OnInit {
     this.activatedRoute.params.subscribe(params => {
       const accountId = params['accountId'] as string;
       this.loadAccountFriends(accountId);
+
+      this.friendshipService.startConnection(accountId);
     });
+
+    this.startListeners();
+  }
+
+  ngOnDestroy() {
+    this.friendshipService.stopConnection();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  private startListeners() {
+    // Listen for incoming friend requests
+    const receivedSub = this.friendshipService.friendRequestReceived$.subscribe(data => {
+      if (!data) return;
+
+      this.loadAccountFriends(this.account!.id, true);
+    });
+    this.subscriptions.push(receivedSub);
+
+    // Listen for accepted friend requests
+    const acceptedSub = this.friendshipService.friendRequestAccepted$.subscribe(data => {
+      if (!data) return;
+
+      this.loadAccountFriends(this.account!.id, true);
+    });
+    this.subscriptions.push(acceptedSub);
   }
 
   startPrivateChat($event: PeerResponse): void {
@@ -59,7 +88,7 @@ export class AccountFriendsComponent implements OnInit {
 
   sendFriendRequest(account: Account) {
     const peer2: Peer = {
-      peerId:  account.id,
+      peerId: account.id,
       userName: account.userName
     };
     this.friendshipService.sendFriendRequest(this.peer1, peer2)
@@ -73,7 +102,7 @@ export class AccountFriendsComponent implements OnInit {
 
   unfriend(friend: PeerResponse) {
     const peer2: Peer = {
-      peerId:  friend.peerId,
+      peerId: friend.peerId,
       userName: friend.userName
     };
     this.friendshipService.unfriendRequest(this.peer1, peer2)
@@ -87,7 +116,7 @@ export class AccountFriendsComponent implements OnInit {
 
   acceptFriend(friend: PeerResponse) {
     const peer2: Peer = {
-      peerId:  friend.peerId,
+      peerId: friend.peerId,
       userName: friend.userName
     };
     this.friendshipService.acceptFriendRequest(this.peer1, peer2)
@@ -98,7 +127,6 @@ export class AccountFriendsComponent implements OnInit {
       )
       .subscribe();
   }
-
 
   startGroupChat(overrideExisting: boolean = false) {
     const selectedFriends = this.friends.filter(item => item.checked)
@@ -120,51 +148,53 @@ export class AccountFriendsComponent implements OnInit {
     }
   }
 
-  private loadAccountFriends(accountId: string) {
+  private loadAccountFriends(accountId: string, shouldDelay: boolean = false) {
+    const delayTime = shouldDelay ? 2500 : 0;
+
     forkJoin([
       this.friendshipService.getFriendRequests(accountId),
       this.friendshipService.getFriendRequestsISent(accountId),
       this.friendshipService.getFriends(accountId),
       this.accountsService.loadAccounts()
-    ])
-      .pipe(
-        tap(([receivedRequests, sentRequests, friends, allAccounts]) => {
-          // Update component properties
-          this.receivedFriendRequests = receivedRequests;
-          this.sentFriendRequests = sentRequests;
-          
-          this.friends = friends.map(friend => ({
-            ...friend,
-            chat: null,
-            checked: false
-          }));
+    ]).pipe(
+      delay(delayTime),
+      tap(([receivedRequests, sentRequests, friends, allAccounts]) => {
+        // Update component properties
+        this.receivedFriendRequests = receivedRequests;
+        this.sentFriendRequests = sentRequests;
 
-          // Get all user IDs that should be filtered out
-          const currentUserId = accountId;
-          const friendIds = friends.map(f => f.peerId);
-          const receivedRequestIds = receivedRequests.map(r => r.peerId);
-          const sentRequestIds = sentRequests.map(s => s.peerId);
-          
-          const excludedIds = new Set([
-            currentUserId,
-            ...friendIds,
-            ...receivedRequestIds,
-            ...sentRequestIds
-          ]);
+        this.friends = friends.map(friend => ({
+          ...friend,
+          chat: null,
+          checked: false
+        }));
 
-          // Filter accounts to show only those not already connected
-          this.randomAccounts = allAccounts.filter(account => 
-            !excludedIds.has(account.id)
-          );
+        // Get all user IDs that should be filtered out
+        const currentUserId = accountId;
+        const friendIds = friends.map(f => f.peerId);
+        const receivedRequestIds = receivedRequests.map(r => r.peerId);
+        const sentRequestIds = sentRequests.map(s => s.peerId);
 
-          this.onFriends.emit(this.friends);
-        })
-      )
+        const excludedIds = new Set([
+          currentUserId,
+          ...friendIds,
+          ...receivedRequestIds,
+          ...sentRequestIds
+        ]);
+
+        // Filter accounts to show only those not already connected
+        this.randomAccounts = allAccounts.filter(account =>
+          !excludedIds.has(account.id)
+        );
+
+        this.onFriends.emit(this.friends);
+      })
+    )
       .subscribe();
   }
 
   private get peer1(): Peer {
-    return <Peer> {
+    return <Peer>{
       peerId: this.account?.id!,
       userName: this.account?.userName
     }

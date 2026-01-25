@@ -32,7 +32,7 @@ export class ChatService {
 
   constructor(
     @Inject('CHAT_BASE_URL') private baseUrl: string,
-    @Inject('SIGNALR_URL') private signalrUrl: string,
+    @Inject('CHAT_SIGNALR_URL') private signalrUrl: string,
     private httpClient: HttpClient
   ) {
 
