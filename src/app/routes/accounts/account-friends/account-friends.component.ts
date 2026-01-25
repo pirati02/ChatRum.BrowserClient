@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from "@angular/core";
 import {AccountsService} from "../../../services/accounts.service";
-import {delay, empty, finalize, forkJoin, Subscription, tap} from "rxjs";
+import {delay, finalize, forkJoin, Subscription, tap} from "rxjs";
 import {Account} from "../../../models/account";
 import {ActivatedRoute, Router} from "@angular/router";
 import {PeerResponse} from "../../../models/peer.response";
@@ -40,7 +40,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.activatedRoute.params.subscribe(params => {
       const accountId = params['accountId'] as string;
-      this.loadAccountFriends(accountId);
+      this.loadAccountFriendsGraph(accountId);
 
       this.friendshipService.startConnection(accountId);
     });
@@ -58,7 +58,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     const receivedSub = this.friendshipService.friendRequestReceived$.subscribe(data => {
       if (!data) return;
 
-      this.loadAccountFriends(this.account!.id, true);
+      this.refreshFriendRequests(this.account!.id, data.fromPeerId);
     });
     this.subscriptions.push(receivedSub);
 
@@ -66,7 +66,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     const acceptedSub = this.friendshipService.friendRequestAccepted$.subscribe(data => {
       if (!data) return;
 
-      this.loadAccountFriends(this.account!.id, true);
+      this.refreshFriendsOnAccept(this.account!.id, data.fromPeerId);
     });
     this.subscriptions.push(acceptedSub);
   }
@@ -94,7 +94,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     this.friendshipService.sendFriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
-          this.loadAccountFriends(this.account?.id!);
+          this.loadAccountFriendsGraph(this.account?.id!);
         })
       )
       .subscribe()
@@ -108,7 +108,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     this.friendshipService.unfriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
-          this.loadAccountFriends(this.account?.id!);
+          this.loadAccountFriendsGraph(this.account?.id!);
         })
       )
       .subscribe();
@@ -122,7 +122,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     this.friendshipService.acceptFriendRequest(this.peer1, peer2)
       .pipe(
         finalize(() => {
-          this.loadAccountFriends(this.account?.id!);
+          this.loadAccountFriendsGraph(this.account?.id!);
         })
       )
       .subscribe();
@@ -148,16 +148,51 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadAccountFriends(accountId: string, shouldDelay: boolean = false) {
-    const delayTime = shouldDelay ? 2500 : 0;
+  private refreshFriendRequests(accountId: string, fromPeer: Peer) {
+    this.friendshipService.getFriendRequests(accountId)
+      .pipe(
+        delay(2500),
+        tap(receivedRequests => {
+          this.receivedFriendRequests = receivedRequests;
 
+          // Remove the peer from randomAccounts if they exist there
+          this.randomAccounts = this.randomAccounts.filter(
+            account => account.id !== fromPeer.peerId
+          );
+        })
+      )
+      .subscribe();
+  }
+
+  private refreshFriendsOnAccept(accountId: string, fromPeer: Peer) {
+    this.friendshipService.getFriends(accountId)
+      .pipe(
+        delay(2500),
+        tap(friends => {
+          this.friends = friends.map(friend => ({
+            ...friend,
+            chat: null,
+            checked: false
+          }));
+
+          // Remove the accepted peer from receivedFriendRequests
+          this.receivedFriendRequests = this.receivedFriendRequests.filter(
+            request => request.peerId !== fromPeer.peerId
+          );
+
+          this.onFriends.emit(this.friends);
+        })
+      )
+      .subscribe();
+  }
+
+  private loadAccountFriendsGraph(accountId: string) {
     forkJoin([
       this.friendshipService.getFriendRequests(accountId),
       this.friendshipService.getFriendRequestsISent(accountId),
       this.friendshipService.getFriends(accountId),
       this.accountsService.loadAccounts()
     ]).pipe(
-      delay(delayTime),
       tap(([receivedRequests, sentRequests, friends, allAccounts]) => {
         // Update component properties
         this.receivedFriendRequests = receivedRequests;

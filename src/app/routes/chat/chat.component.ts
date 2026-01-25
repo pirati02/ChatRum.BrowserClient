@@ -1,7 +1,6 @@
 import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ChatService} from "../../services/chat.service";
-import {catchError, delay, mergeMap, Observable, of, tap} from "rxjs";
+import {catchError, delay, mergeMap, Observable, of, Subscription, tap} from "rxjs";
 import {MessageRequest} from "../../models/message.request";
 import {MessageResponse} from "../../models/message.response";
 import {MessageStatus} from "../../models/message.status";
@@ -15,6 +14,7 @@ import {ChatDetailsComponent, ChatDetailsData} from "../chat-details/chat-detail
 import {ChatResponse} from "../../models/chat.response";
 import {ImageContent, MessageContent, PlainTextContent} from "../../models/message.content";
 import {HelperService} from "../../services/helper.service";
+import {SendFileEvent, SendMessageEvent} from "./message-input/message-input.component";
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | ''
 
@@ -38,9 +38,6 @@ interface Chat {
 export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('scrollElement') scrollContainer?: ElementRef<HTMLDivElement>;
-  chatGroup$?: FormGroup<{
-    messageContent: FormControl<string | null>
-  }>;
   chat: Chat = <Chat>{
     chatId: null,
     messages: [],
@@ -51,12 +48,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   me?: Participant;
   overrideExisting: boolean = false;
-  private messagePlaceholderDefault: string = "Type a message...";
-  messagePlaceholder: string = this.messagePlaceholderDefault;
-  private selectedFile?: File;
+  private subscriptions: Subscription[] = [];
 
   constructor(
-    private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private chatService: ChatService,
     private ngZone: NgZone,
@@ -66,9 +60,6 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.chatGroup$ = this.fb.group({
-      messageContent: ['']
-    });
     this.gatherChatInfo()
       .pipe(
         tap(() => {
@@ -96,7 +87,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
                 const convNotFound = apiErrors.find(e => e.type === ErrorType.NotFound);
                 if (convNotFound) {
-                  this.startChatInternal().subscribe(() => this.cleanupMessageContent());
+                  this.startChatInternal().subscribe(() => this.scrollToBottom());
                 }
 
                 return of(null);
@@ -114,80 +105,47 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.chatService.stopConnection();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  sendMessage() {
-    if (this.selectedFile) {
-      this.sendFileMessage();
-      return;
-    }
+  onSendMessage(event: SendMessageEvent) {
+    const content = event.content?.trim();
+    if (!content) return;
 
+    const messageContent = this.helperService.isLink(content)
+      ? <MessageContent>{type: 'link', content}
+      : <PlainTextContent>{type: 'plain', content};
 
-    const content = this.chatGroup$?.controls.messageContent?.value!;
-    if (!content?.trim()) {
-      return;
-    }
-
-    let message: MessageRequest = {
+    this.dispatchMessage({
       sender: this.me!,
-      content: <PlainTextContent>{type: 'plain', content: content},
+      content: messageContent,
       replyOf: null
-    };
-
-    if (this.helperService.isLink(content)) {
-      message = {
-        ...message,
-        content: <MessageContent>{
-          type: 'link',
-          content: content,
-        }
-      };
-    }
-
-    if (!this.chat.chatId) {
-      this.startChatInternal()
-        .pipe(
-          tap(() => this.chatService.sendMessage(this.chat.chatId!, message)
-            .subscribe(() => this.cleanupMessageContent()))
-        ).subscribe();
-    } else {
-      this.chatService.sendMessage(this.chat.chatId!, message)
-        .subscribe(() => this.cleanupMessageContent());
-    }
+    });
   }
 
-  sendFileMessage() {
-    if (!this.selectedFile) return;
+  onSendFile(event: SendFileEvent) {
+    if (!event.file) return;
 
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = (reader.result as string).split(",")[1];
-      const message: MessageRequest = {
+      this.dispatchMessage({
         sender: this.me!,
         content: <ImageContent>{type: 'image', content: base64},
         replyOf: null
-      };
-
-      if (!this.chat.chatId) {
-        this.startChatInternal()
-          .pipe(
-            tap(() => this.chatService.sendMessage(this.chat.chatId!, message)
-              .subscribe(() => this.cleanupFileMessage()))
-          ).subscribe();
-      } else {
-        this.chatService.sendMessage(this.chat.chatId!, message)
-          .subscribe(() => this.cleanupFileMessage());
-      }
+      });
     };
-
-    reader.readAsDataURL(this.selectedFile);
+    reader.readAsDataURL(event.file);
   }
 
-  onFileSelected($event: Event) {
-    const target = $event.target as HTMLInputElement;
-    const file: File = Array.from(target.files!)[0];
-    this.messagePlaceholder = file.name;
-    this.selectedFile = file;
+  private dispatchMessage(message: MessageRequest) {
+    const send$ = this.chat.chatId
+      ? this.chatService.sendMessage(this.chat.chatId, message)
+      : this.startChatInternal().pipe(
+          mergeMap(() => this.chatService.sendMessage(this.chat.chatId!, message))
+        );
+
+    send$.subscribe(() => this.scrollToBottom());
   }
 
   openChatDetails() {
@@ -204,18 +162,14 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   retryMessage(message: UiMessage) {
     if (!this.chat.chatId) return;
 
-    const messageRequest: MessageRequest = {
-      sender: message.sender,
-      content: message.content,
-      replyOf: message.replyOf
-    };
-
-    // Reset status to indicate sending
     message.status = MessageStatus.Sent;
     message.statusString = this.statusString(MessageStatus.Sent);
 
-    this.chatService.sendMessage(this.chat.chatId, messageRequest)
-      .subscribe();
+    this.chatService.sendMessage(this.chat.chatId, {
+      sender: message.sender,
+      content: message.content,
+      replyOf: message.replyOf
+    }).subscribe();
   }
 
   getReceiver(id: string): Participant | undefined {
@@ -225,30 +179,43 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   private initializeChat(res: ChatResponse) {
     this.chat = {
       ...res,
-      messages: res.messages.map(item => {
-        item.statusString = this.statusString(item.status);
-        return item;
-      }),
+      messages: res.messages.map(m => this.toUiMessage(m)),
       participants: res.participants,
       creator: res.creator,
       createdDate: res.createdDate
     };
 
-    const others = this.chat?.participants!.filter(p => p.id !== this.me?.id)?.map(a => a.id)!;
-    const unreadMessages = this.chat.messages.filter(a => ([MessageStatus.Sent, MessageStatus.Delivered]
-      .includes(a.status)) && others?.includes(a.sender.id)
+    this.markUnreadMessagesAsSeen();
+  }
+
+  private toUiMessage(message: MessageResponse): UiMessage {
+    return {
+      ...message,
+      statusString: this.statusString(message.status)
+    };
+  }
+
+  private markUnreadMessagesAsSeen() {
+    const otherParticipantIds = this.chat.participants
+      ?.filter(p => p.id !== this.me?.id)
+      .map(p => p.id) ?? [];
+
+    const unreadMessages = this.chat.messages.filter(m =>
+      [MessageStatus.Sent, MessageStatus.Delivered].includes(m.status) &&
+      otherParticipantIds.includes(m.sender.id)
     );
-    if (unreadMessages.length > 0) {
-      this.chatService.markAsRead(this.chat.chatId!, unreadMessages.map(item => item.messageId))
-        .subscribe(res => {
-          if (res) {
-            this.chat.messages.forEach(item => {
-              item.status = MessageStatus.Seen;
-              item.statusString = this.statusString(item.status);
-            })
-          }
-        });
-    }
+
+    if (unreadMessages.length === 0) return;
+
+    this.chatService.markAsRead(this.chat.chatId!, unreadMessages.map(m => m.messageId))
+      .subscribe(success => {
+        if (success) {
+          this.chat.messages.forEach(m => {
+            m.status = MessageStatus.Seen;
+            m.statusString = this.statusString(MessageStatus.Seen);
+          });
+        }
+      });
   }
 
   private startChatInternal() {
@@ -270,88 +237,76 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         const receivers = JSON.parse(params['receivers']) as Account[];
         const me = JSON.parse(params['me']) as Account;
 
-        this.me = <Participant>{
-          id: me.id,
-          firstName: me.firstName,
-          lastName: me.lastName,
-          nickName: me.userName
-        };
-
-        this.overrideExisting = params["overrideExisting"] == "true" || false;
+        this.me = this.toParticipant(me);
+        this.overrideExisting = params["overrideExisting"] === "true";
         this.chat = {
           ...this.chat,
           chatId: params["chatId"],
           participants: [
             ...this.chat.participants!,
-            ...receivers.map(receiver => <Participant>{
-              id: receiver.id,
-              firstName: receiver.firstName,
-              lastName: receiver.lastName,
-              nickName: receiver.userName
-            }),
-            ...[this.me]]
-        }
+            ...receivers.map(r => this.toParticipant(r)),
+            this.me
+          ]
+        };
       })
     );
   }
 
-  private startListeners() {
-    this.chatService.chatStarted$.subscribe((res) => {
-      this.chat.chatId = res!;
-    });
-
-    this.chatService.updateMessageState$.subscribe((result) => {
-      if (result?.messageId) {
-        const message = this.chat.messages.find(item => item.messageId === result?.messageId);
-        message!.statusString = this.statusString(result?.status);
-        message!.status = result?.status;
-      }
-    });
-
-    this.chatService.chatAppendMessage$.subscribe((result) => {
-      if (!result)
-        return;
-
-      if (result.message) {
-        if (this.chat.messages.some(a => a.messageId === result?.message.messageId)) {
-          return;
-        }
-
-        result.message.statusString = this.statusString(result!.message?.status);
-        this.chat.messages.push(result.message);
-        if (result.update) {
-          this.chatService.updateMessageStatus(result.message, MessageStatus.Seen);
-        }
-        this.scrollToBottom();
-      }
-    });
-
-    this.chatService.messageFailed$.subscribe((result) => {
-      if (!result) return;
-
-      const message = this.chat.messages.find(item => item.messageId === result.messageId);
-      if (message) {
-        message.status = MessageStatus.Failed;
-        message.statusString = this.statusString(MessageStatus.Failed);
-      } else {
-        // Message doesn't exist in UI, add it as failed
-        result.status = MessageStatus.Failed;
-        result.statusString = this.statusString(MessageStatus.Failed);
-        this.chat.messages.push(result);
-        this.scrollToBottom();
-      }
-    });
+  private toParticipant(account: Account): Participant {
+    return {
+      id: account.id,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      nickName: account.userName,
+      isAdmin: false
+    };
   }
 
-  private cleanupMessageContent() {
-    this.chatGroup$?.controls.messageContent.patchValue('');
+  private startListeners() {
+    this.subscriptions.push(
+      this.chatService.chatStarted$.subscribe(res => this.chat.chatId = res!),
+      this.chatService.updateMessageState$.subscribe(result => this.handleMessageStateUpdate(result)),
+      this.chatService.chatAppendMessage$.subscribe(result => this.handleNewMessage(result)),
+      this.chatService.messageFailed$.subscribe(result => this.handleMessageFailed(result))
+    );
+  }
+
+  private handleMessageStateUpdate(result: { messageId: string; status: MessageStatus } | null) {
+    if (!result?.messageId) return;
+
+    const message = this.chat.messages.find(item => item.messageId === result.messageId);
+    if (message) {
+      message.status = result.status;
+      message.statusString = this.statusString(result.status);
+    }
+  }
+
+  private handleNewMessage(result: { message: UiMessage; update: boolean } | null) {
+    if (!result?.message) return;
+    if (this.chat.messages.some(m => m.messageId === result.message.messageId)) return;
+
+    result.message.statusString = this.statusString(result.message.status);
+    this.chat.messages.push(result.message);
+
+    if (result.update) {
+      this.chatService.updateMessageStatus(result.message, MessageStatus.Seen);
+    }
     this.scrollToBottom();
   }
 
-  private cleanupFileMessage() {
-    this.selectedFile = undefined;
-    this.messagePlaceholder = this.messagePlaceholderDefault;
-    this.cleanupMessageContent();
+  private handleMessageFailed(result: UiMessage | null) {
+    if (!result) return;
+
+    const message = this.chat.messages.find(item => item.messageId === result.messageId);
+    if (message) {
+      message.status = MessageStatus.Failed;
+      message.statusString = this.statusString(MessageStatus.Failed);
+    } else {
+      result.status = MessageStatus.Failed;
+      result.statusString = this.statusString(MessageStatus.Failed);
+      this.chat.messages.push(result);
+      this.scrollToBottom();
+    }
   }
 
   private scrollToBottom(): void {

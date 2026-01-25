@@ -3,99 +3,24 @@
     <span style="flex-grow: 1">Chat</span>
     <mat-icon style="align-self: flex-end; cursor: pointer" (click)="openChatDetails()">menu</mat-icon>
   </div>
-  <form [formGroup]="chatGroup$!">
-    <div class="artists-list d-flex full-width full-height flex-column">
-      <div class="d-flex flex-column full-width full-height">
-        <div class="chat-container d-flex flex-column list-scroll-behavior" #scrollElement>
-          <div class="message-box" id="messageBox">
-            <ng-container *ngFor="let message of chat.messages" class="message-item">
-              <ng-container
-                [ngTemplateOutlet]="receiverTemplate"
-                [ngTemplateOutletContext]="{
-                  participant: this.getReceiver(message.sender.id),
-                  message: message
-                }"
-                *ngIf="message.sender.id !== this.me?.id"></ng-container>
-              <ng-container
-                [ngTemplateOutlet]="senderTemplate"
-                [ngTemplateOutletContext]="{
-                  message: message
-                }"
-                *ngIf="message.sender.id === this.me?.id"></ng-container>
-            </ng-container>
-          </div>
-        </div>
-        <div>
-          <div class="d-flex flex-row">
-            <input type="text" class="message-input" id="message-content" formControlName="messageContent"
-                   [placeholder]="messagePlaceholder" style="flex-grow: 1">
-            <div>
-              <button class="send-btn" (click)="fileInput.click()">
-                <mat-icon>attach_file</mat-icon>
-              </button>
-              <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)">
-            </div>
-          </div>
-          <button class="send-btn" (click)="sendMessage()">Send</button>
+  <div class="artists-list d-flex full-width full-height flex-column">
+    <div class="d-flex flex-column full-width full-height">
+      <div class="chat-container d-flex flex-column list-scroll-behavior" #scrollElement>
+        <div class="message-box" id="messageBox">
+          <ng-container *ngFor="let message of chat.messages">
+            <app-message-bubble
+              [message]="message"
+              [isSender]="message.sender.id === me?.id"
+              [participant]="getReceiver(message.sender.id)"
+              (retry)="retryMessage($event)">
+            </app-message-bubble>
+          </ng-container>
         </div>
       </div>
+      <app-message-input
+        (sendMessage)="onSendMessage($event)"
+        (sendFile)="onSendFile($event)">
+      </app-message-input>
     </div>
-  </form>
+  </div>
 </div>
-
-<ng-template #senderTemplate let-message="message">
-  <div class="d-flex flex-column message-box-mine"
-       [class.message-box-failed]="message.statusString === 'failed'"
-       style="margin: 1.5rem">
-    <span style="font-size: 0.6em; margin-bottom: 1rem">you</span>
-    <ng-container [ngSwitch]="message.content.$type || message.content.type">
-      <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
-                    [ngTemplateOutletContext]="{message: message}">
-      </ng-container>
-      <ng-container *ngSwitchCase="'link'" [ngTemplateOutlet]="linkContent"
-                    [ngTemplateOutletContext]="{message: message}"></ng-container>
-      <ng-container *ngSwitchCase="'image'" [ngTemplateOutlet]="imageContent"
-                    [ngTemplateOutletContext]="{message: message, alignStyle: 'end'}"></ng-container>
-    </ng-container>
-    <div class="d-flex flex-row" style="align-items: center; gap: 0.5rem;">
-      <span style="font-size: 0.8em" [class.status-failed]="message.statusString === 'failed'">{{ message.statusString }}</span>
-      <button *ngIf="message.statusString === 'failed'"
-              class="retry-btn"
-              (click)="retryMessage(message)">
-        <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem;">refresh</mat-icon>
-        Retry
-      </button>
-    </div>
-  </div>
-</ng-template>
-
-
-<ng-template #receiverTemplate let-participant="participant" let-message="message">
-  <div class="d-flex flex-column message-box-others" style="margin: 1.5rem">
-    <span style="font-size: 0.6em; margin-bottom: 1rem">{{ participant?.nickName }}</span>
-    <ng-container [ngSwitch]="message.content.$type || message.content.type">
-      <ng-container *ngSwitchCase="'plain'" [ngTemplateOutlet]="plainTextContent"
-                    [ngTemplateOutletContext]="{message: message}">
-      </ng-container>
-      <ng-container *ngSwitchCase="'link'" [ngTemplateOutlet]="linkContent"
-                    [ngTemplateOutletContext]="{message: message}"></ng-container>
-      <ng-container *ngSwitchCase="'image'" [ngTemplateOutlet]="imageContent"
-                    [ngTemplateOutletContext]="{message: message}"></ng-container>
-    </ng-container>
-  </div>
-</ng-template>
-
-<ng-template #plainTextContent let-message="message">
-  <span style="font-size: 1.2em">{{ message.content.content }}</span>
-</ng-template>
-
-<ng-template #linkContent let-message="message">
-  <a style="font-size: 1.2em" [href]="message.content.content" target="_blank">{{ message.content.content }}</a>
-</ng-template>
-
-<ng-template #imageContent let-message="message" let-alignStyle="alignStyle">
-  <img [src]="'data:image/png;base64,' + message.content.content" style="max-width: 20rem; max-height: 20rem;"
-       [ngStyle]="{
-          'align-self':alignStyle || 'start'
-          }">
-</ng-template>

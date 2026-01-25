@@ -1,0 +1,66 @@
+.message-bubble {
+  margin: 1.5rem;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.message-box-mine {
+  text-align: right;
+  background: rgba(176, 176, 176, 0.38);
+}
+
+.message-box-others {
+  text-align: left;
+  background: #f5f2de;
+}
+
+.message-box-failed {
+  border: 1px solid #dc3545;
+  background: rgba(220, 53, 69, 0.1) !important;
+}
+
+.sender-name {
+  font-size: 0.6em;
+  margin-bottom: 1rem;
+}
+
+.status-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.status-text {
+  font-size: 0.8em;
+}
+
+.status-failed {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #c82333;
+  }
+}
+
+.retry-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}

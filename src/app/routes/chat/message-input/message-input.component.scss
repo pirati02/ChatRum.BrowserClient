@@ -1,0 +1,43 @@
+.message-input-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.message-input {
+  flex-grow: 1;
+  width: calc(100% - 22px);
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.attachment-btn-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.send-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background: #0056b3;
+  }
+}
+
+.attachment-btn {
+  width: auto;
+  margin-left: 5px;
+}

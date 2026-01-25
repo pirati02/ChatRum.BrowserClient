@@ -1,0 +1,15 @@
+<div class="message-input-container">
+  <div class="input-row">
+    <input type="text"
+           class="message-input"
+           [(ngModel)]="messageContent"
+           [placeholder]="displayPlaceholder">
+    <div class="attachment-btn-wrapper">
+      <button class="send-btn attachment-btn" (click)="fileInput.click()">
+        <mat-icon>attach_file</mat-icon>
+      </button>
+      <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)">
+    </div>
+  </div>
+  <button class="send-btn" (click)="onSend()">Send</button>
+</div>

@@ -20,6 +20,9 @@ import {FeedComponent} from "./routes/feed/feed.component";
 import {AccountComponent} from "./routes/accounts/account-details/account.component";
 import {AccountFriendsComponent} from "./routes/accounts/account-friends/account-friends.component";
 import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-account.component";
+import {MessageContentComponent} from "./routes/chat/message-content/message-content.component";
+import {MessageBubbleComponent} from "./routes/chat/message-bubble/message-bubble.component";
+import {MessageInputComponent} from "./routes/chat/message-input/message-input.component";
 
 
 @NgModule({
@@ -35,7 +38,10 @@ import {ModifyAccountComponent} from "./routes/accounts/modify-account/modify-ac
     CreateAccountComponent,
     ModifyAccountComponent,
     ChatDetailsComponent,
-    FeedComponent
+    FeedComponent,
+    MessageContentComponent,
+    MessageBubbleComponent,
+    MessageInputComponent
   ],
   imports: [
     CommonModule,
