@@ -46,4 +46,20 @@ export class AccountsService{
     return this.httpClient
       .put<string>(this.baseUrl + '/' + accountId, account)
   }
+
+  /**
+   * Register public key for E2E encryption
+   */
+  registerPublicKey(accountId: string, publicKey: string) {
+    return this.httpClient
+      .put<boolean>(this.baseUrl + '/' + accountId + '/public-key', { publicKey })
+  }
+
+  /**
+   * Get public key for an account
+   */
+  getPublicKey(accountId: string) {
+    return this.httpClient
+      .get<{ publicKey: string }>(this.baseUrl + '/' + accountId + '/public-key')
+  }
 }

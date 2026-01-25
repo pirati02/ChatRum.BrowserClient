@@ -1,6 +1,18 @@
 <div class="tab-list-footer-page">
   <div class="header d-flex flex-row">
     <span style="flex-grow: 1">Chat</span>
+    <mat-icon *ngIf="encryptionEnabled"
+              class="encryption-indicator"
+              matTooltip="End-to-end encrypted"
+              style="color: #4CAF50; margin-right: 8px;">
+      lock
+    </mat-icon>
+    <mat-icon *ngIf="encryptionError"
+              class="encryption-indicator"
+              [matTooltip]="encryptionError"
+              style="color: #FF9800; margin-right: 8px;">
+      lock_open
+    </mat-icon>
     <mat-icon style="align-self: flex-end; cursor: pointer" (click)="openChatDetails()">menu</mat-icon>
   </div>
   <div class="artists-list d-flex full-width full-height flex-column">
