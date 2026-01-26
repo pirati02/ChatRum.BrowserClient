@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { get, set, del } from 'idb-keyval';
 import { KeyPair, RecipientPublicKey, EncryptionResult } from '../models/encrypted-message';
+import { from, Observable, of } from 'rxjs';
+import { map, switchMap, catchError, concatMap, reduce } from 'rxjs/operators';
 
 const KEY_STORAGE_PREFIX = 'e2e-keypair-';
 
@@ -12,36 +14,37 @@ export class CryptoService {
   /**
    * Generate a new ECDH key pair for encryption
    */
-  async generateKeyPair(): Promise<KeyPair> {
-    const keyPair = await crypto.subtle.generateKey(
+  generateKeyPair(): Observable<KeyPair> {
+    return from(crypto.subtle.generateKey(
       {
         name: 'ECDH',
         namedCurve: 'P-256'
       },
       true, // extractable - needed for export
       ['deriveKey', 'deriveBits']
+    )).pipe(
+      map(keyPair => ({
+        publicKey: keyPair.publicKey,
+        privateKey: keyPair.privateKey
+      }))
     );
-
-    return {
-      publicKey: keyPair.publicKey,
-      privateKey: keyPair.privateKey
-    };
   }
 
   /**
    * Export public key to Base64 SPKI format for sending to server
    */
-  async exportPublicKey(publicKey: CryptoKey): Promise<string> {
-    const exported = await crypto.subtle.exportKey('spki', publicKey);
-    return this.arrayBufferToBase64(exported);
+  exportPublicKey(publicKey: CryptoKey): Observable<string> {
+    return from(crypto.subtle.exportKey('spki', publicKey)).pipe(
+      map(exported => this.arrayBufferToBase64(exported))
+    );
   }
 
   /**
    * Import a public key from Base64 SPKI format
    */
-  async importPublicKey(base64Key: string): Promise<CryptoKey> {
+  importPublicKey(base64Key: string): Observable<CryptoKey> {
     const keyData = this.base64ToArrayBuffer(base64Key);
-    return crypto.subtle.importKey(
+    return from(crypto.subtle.importKey(
       'spki',
       keyData,
       {
@@ -50,178 +53,196 @@ export class CryptoService {
       },
       true,
       []
-    );
+    ));
   }
 
   /**
    * Store key pair in IndexedDB for persistence
    */
-  async storeKeyPair(userId: string, keyPair: KeyPair): Promise<void> {
-    // Export keys to storable format
-    const exportedPublic = await crypto.subtle.exportKey('spki', keyPair.publicKey);
-    const exportedPrivate = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
-
-    const storableKeyPair = {
-      publicKey: this.arrayBufferToBase64(exportedPublic),
-      privateKey: this.arrayBufferToBase64(exportedPrivate)
-    };
-
-    await set(KEY_STORAGE_PREFIX + userId, storableKeyPair);
+  storeKeyPair(userId: string, keyPair: KeyPair): Observable<void> {
+    return from(Promise.all([
+      crypto.subtle.exportKey('spki', keyPair.publicKey),
+      crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+    ])).pipe(
+      switchMap(([exportedPublic, exportedPrivate]) => {
+        const storableKeyPair = {
+          publicKey: this.arrayBufferToBase64(exportedPublic),
+          privateKey: this.arrayBufferToBase64(exportedPrivate)
+        };
+        return from(set(KEY_STORAGE_PREFIX + userId, storableKeyPair));
+      })
+    );
   }
 
   /**
    * Retrieve key pair from IndexedDB
    */
-  async getKeyPair(userId: string): Promise<KeyPair | null> {
-    const stored = await get<{ publicKey: string; privateKey: string }>(KEY_STORAGE_PREFIX + userId);
+  getKeyPair(userId: string): Observable<KeyPair | null> {
+    return from(get<{ publicKey: string; privateKey: string }>(KEY_STORAGE_PREFIX + userId)).pipe(
+      switchMap(stored => {
+        if (!stored) {
+          return of(null);
+        }
 
-    if (!stored) {
-      return null;
-    }
-
-    try {
-      const publicKey = await crypto.subtle.importKey(
-        'spki',
-        this.base64ToArrayBuffer(stored.publicKey),
-        {
-          name: 'ECDH',
-          namedCurve: 'P-256'
-        },
-        true,
-        []
-      );
-
-      const privateKey = await crypto.subtle.importKey(
-        'pkcs8',
-        this.base64ToArrayBuffer(stored.privateKey),
-        {
-          name: 'ECDH',
-          namedCurve: 'P-256'
-        },
-        true,
-        ['deriveKey', 'deriveBits']
-      );
-
-      return { publicKey, privateKey };
-    } catch (error) {
-      console.error('Failed to import stored key pair:', error);
-      return null;
-    }
+        return from(Promise.all([
+          crypto.subtle.importKey(
+            'spki',
+            this.base64ToArrayBuffer(stored.publicKey),
+            {
+              name: 'ECDH',
+              namedCurve: 'P-256'
+            },
+            true,
+            []
+          ),
+          crypto.subtle.importKey(
+            'pkcs8',
+            this.base64ToArrayBuffer(stored.privateKey),
+            {
+              name: 'ECDH',
+              namedCurve: 'P-256'
+            },
+            true,
+            ['deriveKey', 'deriveBits']
+          )
+        ])).pipe(
+          map(([publicKey, privateKey]) => ({ publicKey, privateKey })),
+          catchError(error => {
+            console.error('Failed to import stored key pair:', error);
+            return of(null);
+          })
+        );
+      })
+    );
   }
 
   /**
    * Delete key pair from IndexedDB (e.g., on logout)
    */
-  async deleteKeyPair(userId: string): Promise<void> {
-    await del(KEY_STORAGE_PREFIX + userId);
+  deleteKeyPair(userId: string): Observable<void> {
+    return from(del(KEY_STORAGE_PREFIX + userId));
   }
 
   /**
    * Encrypt a message for multiple recipients
    */
-  async encryptMessage(
+  encryptMessage(
     message: string,
     recipients: RecipientPublicKey[],
     senderKeyPair: KeyPair
-  ): Promise<EncryptionResult> {
-    // Generate random AES-256-GCM session key
-    const aesKey = await crypto.subtle.generateKey(
+  ): Observable<EncryptionResult> {
+    return from(crypto.subtle.generateKey(
       {
         name: 'AES-GCM',
         length: 256
       },
-      true, // extractable for wrapping
+      true,
       ['encrypt', 'decrypt']
-    );
+    )).pipe(
+      switchMap(aesKey => {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encoder = new TextEncoder();
+        const messageData = encoder.encode(message);
 
-    // Generate random 12-byte IV
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-
-    // Encrypt message content with AES-GCM
-    const encoder = new TextEncoder();
-    const messageData = encoder.encode(message);
-
-    const encryptedContent = await crypto.subtle.encrypt(
-      {
-        name: 'AES-GCM',
-        iv: iv
-      },
-      aesKey,
-      messageData
-    );
-
-    // Export AES key for wrapping
-    const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
-
-    // Encrypt AES key for each recipient using ECDH
-    const encryptedKeys: { [recipientId: string]: string } = {};
-
-    for (const recipient of recipients) {
-      try {
-        const recipientPublicKey = await this.importPublicKey(recipient.publicKey);
-        const wrappedKey = await this.wrapKeyForRecipient(
-          rawAesKey,
-          senderKeyPair.privateKey,
-          recipientPublicKey
+        return from(Promise.all([
+          crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, messageData),
+          crypto.subtle.exportKey('raw', aesKey)
+        ])).pipe(
+          switchMap(([encryptedContent, rawAesKey]) => {
+            return this.encryptKeysForRecipients(recipients, rawAesKey, senderKeyPair).pipe(
+              map(encryptedKeys => ({
+                encryptedContent: this.arrayBufferToBase64(encryptedContent),
+                iv: this.arrayBufferToBase64(iv),
+                encryptedKeys
+              }))
+            );
+          })
         );
-        encryptedKeys[recipient.recipientId] = this.arrayBufferToBase64(wrappedKey);
-      } catch (error) {
-        console.error(`Failed to encrypt key for recipient ${recipient.recipientId}:`, error);
-      }
-    }
-
-    return {
-      encryptedContent: this.arrayBufferToBase64(encryptedContent),
-      iv: this.arrayBufferToBase64(iv),
-      encryptedKeys
-    };
+      })
+    );
   }
 
   /**
    * Decrypt a message received from a sender
    */
-  async decryptMessage(
+  decryptMessage(
     encryptedContent: string,
     iv: string,
     encryptedAesKey: string,
     senderPublicKey: string,
     recipientKeyPair: KeyPair
-  ): Promise<string> {
-    // Import sender's public key
-    const senderKey = await this.importPublicKey(senderPublicKey);
-
-    // Unwrap the AES key
-    const unwrappedAesKey = await this.unwrapKeyFromSender(
-      this.base64ToArrayBuffer(encryptedAesKey),
-      recipientKeyPair.privateKey,
-      senderKey
+  ): Observable<string> {
+    return this.importPublicKey(senderPublicKey).pipe(
+      switchMap(senderKey =>
+        from(this.unwrapKeyFromSender(
+          this.base64ToArrayBuffer(encryptedAesKey),
+          recipientKeyPair.privateKey,
+          senderKey
+        ))
+      ),
+      switchMap(unwrappedAesKey =>
+        from(crypto.subtle.decrypt(
+          {
+            name: 'AES-GCM',
+            iv: this.base64ToArrayBuffer(iv)
+          },
+          unwrappedAesKey,
+          this.base64ToArrayBuffer(encryptedContent)
+        ))
+      ),
+      map(decryptedContent => {
+        const decoder = new TextDecoder();
+        return decoder.decode(decryptedContent);
+      })
     );
-
-    // Decrypt the message content
-    const decryptedContent = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: this.base64ToArrayBuffer(iv)
-      },
-      unwrappedAesKey,
-      this.base64ToArrayBuffer(encryptedContent)
-    );
-
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedContent);
   }
 
   /**
    * Check if IndexedDB is available (may not be in private browsing)
    */
-  async isStorageAvailable(): Promise<boolean> {
-    try {
-      await set('__test__', 'test');
-      await del('__test__');
-      return true;
-    } catch {
-      return false;
+  isStorageAvailable(): Observable<boolean> {
+    return from(set('__test__', 'test')).pipe(
+      switchMap(() => from(del('__test__'))),
+      map(() => true),
+      catchError(() => of(false))
+    );
+  }
+
+  /**
+   * Encrypt AES keys for all recipients
+   */
+  private encryptKeysForRecipients(
+    recipients: RecipientPublicKey[],
+    rawAesKey: ArrayBuffer,
+    senderKeyPair: KeyPair
+  ): Observable<{ [recipientId: string]: string }> {
+    if (recipients.length === 0) {
+      return of({});
     }
+
+    return from(recipients).pipe(
+      concatMap(recipient =>
+        this.importPublicKey(recipient.publicKey).pipe(
+          switchMap(recipientPublicKey =>
+            from(this.wrapKeyForRecipient(rawAesKey, senderKeyPair.privateKey, recipientPublicKey))
+          ),
+          map(wrappedKey => ({
+            recipientId: recipient.recipientId,
+            encryptedKey: this.arrayBufferToBase64(wrappedKey)
+          })),
+          catchError(error => {
+            console.error(`Failed to encrypt key for recipient ${recipient.recipientId}:`, error);
+            return of(null);
+          })
+        )
+      ),
+      reduce((acc, result) => {
+        if (result) {
+          acc[result.recipientId] = result.encryptedKey;
+        }
+        return acc;
+      }, {} as { [recipientId: string]: string })
+    );
   }
 
   /**

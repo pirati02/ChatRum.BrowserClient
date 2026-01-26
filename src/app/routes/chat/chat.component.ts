@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {ChatService} from "../../services/chat.service";
-import {catchError, delay, mergeMap, Observable, of, Subscription, tap, from, switchMap} from "rxjs";
+import {catchError, delay, mergeMap, Observable, of, Subscription, tap, from, switchMap, map, concatMap} from "rxjs";
 import {MessageRequest} from "../../models/message.request";
 import {MessageResponse} from "../../models/message.response";
 import {MessageStatus} from "../../models/message.status";
@@ -55,6 +55,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   private keyPair: KeyPair | null = null;
   encryptionEnabled: boolean = false;
   encryptionError: string | null = null;
+  private startNewChat: boolean = false;
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -71,7 +72,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gatherChatInfo()
       .pipe(
         // Initialize encryption before starting connection
-        switchMap(() => from(this.initializeEncryption())),
+        switchMap(() => this.initializeEncryption()),
         tap(() => {
           this.chatService.startConnection(this.me?.id!)
         }),
@@ -83,11 +84,19 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
           if (chatId) {
             return this.chatService.getChat(chatId)
-              .pipe(tap(res => this.initializeChat(res)))
+              .pipe(
+                switchMap(res => this.initializeChat(res))
+              )
           }
+
+          if (this.startNewChat){
+            this.startChatInternal().subscribe(() => this.scrollToBottom());
+            return of(null);
+          }
+          
           return this.chatService.findChat(this.chat?.participants!)
             .pipe(
-              tap(res => this.initializeChat(res)),
+              switchMap(res => this.initializeChat(res)),
               catchError(err => {
                 let apiErrors: ApiError[] = [];
 
@@ -139,41 +148,45 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private async sendEncryptedMessage(content: string) {
-    try {
-      const recipients = this.getRecipientsWithKeys();
-      const encryptionResult = await this.cryptoService.encryptMessage(
-        content,
-        recipients,
-        this.keyPair!
-      );
+  private sendEncryptedMessage(content: string) {
+    const recipients = this.getRecipientsWithKeys();
+    console.log('Encrypting message for recipients:', recipients.map(r => r.recipientId));
 
-      const encryptedContent: EncryptedContent = {
-        type: 'encrypted',
-        $type: 'encrypted',
-        content: encryptionResult.encryptedContent,
-        iv: encryptionResult.iv,
-        encryptedKeys: encryptionResult.encryptedKeys
-      };
+    this.cryptoService.encryptMessage(
+      content,
+      recipients,
+      this.keyPair!
+    ).pipe(
+      tap(encryptionResult => {
+        const encryptedContent: EncryptedContent = {
+          type: 'encrypted',
+          $type: 'encrypted',
+          content: encryptionResult.encryptedContent,
+          iv: encryptionResult.iv,
+          encryptedKeys: encryptionResult.encryptedKeys
+        };
 
-      this.dispatchMessage({
-        sender: this.me!,
-        content: encryptedContent,
-        replyOf: null
-      });
-    } catch (error) {
-      console.error('Failed to encrypt message:', error);
-      // Fallback to plain text if encryption fails
-      const messageContent: PlainTextContent = this.helperService.isLink(content)
-        ? {type: 'link', $type: 'link', content} as any as PlainTextContent
-        : {type: 'plain', $type: 'plain', content};
+        this.dispatchMessage({
+          sender: this.me!,
+          content: encryptedContent,
+          replyOf: null
+        });
+      }),
+      catchError(error => {
+        console.error('Failed to encrypt message:', error);
+        // Fallback to plain text if encryption fails
+        const messageContent: PlainTextContent = this.helperService.isLink(content)
+          ? {type: 'link', $type: 'link', content} as any as PlainTextContent
+          : {type: 'plain', $type: 'plain', content};
 
-      this.dispatchMessage({
-        sender: this.me!,
-        content: messageContent,
-        replyOf: null
-      });
-    }
+        this.dispatchMessage({
+          sender: this.me!,
+          content: messageContent,
+          replyOf: null
+        });
+        return of(null);
+      })
+    ).subscribe();
   }
 
   private hasAllParticipantKeys(): boolean {
@@ -242,7 +255,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.chat?.participants?.find(p => p.id === id);
   }
 
-  private async initializeChat(res: ChatResponse) {
+  private initializeChat(res: ChatResponse): Observable<void> {
     // First set up the chat with participants (needed for decryption)
     this.chat = {
       ...res,
@@ -253,15 +266,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     };
 
     // Decrypt messages if needed
-    const decryptedMessages: UiMessage[] = [];
-    for (const m of res.messages) {
-      const uiMessage = this.toUiMessage(m);
-      const decrypted = await this.decryptMessageIfNeeded(uiMessage);
-      decryptedMessages.push(decrypted);
+    if (res.messages.length === 0) {
+      this.markUnreadMessagesAsSeen();
+      return of(undefined);
     }
-    this.chat.messages = decryptedMessages;
 
-    this.markUnreadMessagesAsSeen();
+    return from(res.messages).pipe(
+      map(m => this.toUiMessage(m)),
+      concatMap(uiMessage => this.decryptMessageIfNeeded(uiMessage)),
+      tap(decryptedMessage => {
+        this.chat.messages.push(decryptedMessage);
+      }),
+      map(() => undefined),
+      tap({
+        complete: () => this.markUnreadMessagesAsSeen()
+      })
+    );
   }
 
   private toUiMessage(message: MessageResponse): UiMessage {
@@ -314,6 +334,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         const me = JSON.parse(params['me']) as Account;
 
         this.me = this.toParticipant(me);
+        this.startNewChat = params["newChat"] === "true";
         this.overrideExisting = params["overrideExisting"] === "true";
         this.chat = {
           ...this.chat,
@@ -334,7 +355,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       firstName: account.firstName,
       lastName: account.lastName,
       nickName: account.userName,
-      isAdmin: false
+      isAdmin: false,
+      publicKey: account.publicKey // Preserve public key if it exists
     };
   }
 
@@ -350,45 +372,57 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   /**
    * Initialize E2E encryption - generate or retrieve key pair
    */
-  private async initializeEncryption(): Promise<{ chatId?: string }> {
-    try {
-      // Check if storage is available
-      const storageAvailable = await this.cryptoService.isStorageAvailable();
-      if (!storageAvailable) {
-        this.encryptionError = 'Secure storage unavailable (private browsing mode?)';
-        console.warn('IndexedDB not available, encryption disabled');
-        return { chatId: this.chat.chatId ?? undefined };
-      }
+  private initializeEncryption(): Observable<{ chatId?: string }> {
+    return this.cryptoService.isStorageAvailable().pipe(
+      switchMap(storageAvailable => {
+        if (!storageAvailable) {
+          this.encryptionError = 'Secure storage unavailable (private browsing mode?)';
+          console.warn('IndexedDB not available, encryption disabled');
+          return of({ chatId: this.chat.chatId ?? undefined });
+        }
 
-      // Try to get existing key pair
-      this.keyPair = await this.cryptoService.getKeyPair(this.me!.id);
-
-      if (!this.keyPair) {
-        // Generate new key pair
-        this.keyPair = await this.cryptoService.generateKeyPair();
-        await this.cryptoService.storeKeyPair(this.me!.id, this.keyPair);
-
-        // Register public key with server
-        const publicKeyBase64 = await this.cryptoService.exportPublicKey(this.keyPair.publicKey);
-        await this.accountsService.registerPublicKey(this.me!.id, publicKeyBase64).toPromise();
-
-        console.log('Generated and registered new encryption key pair');
-      } else {
-        console.log('Loaded existing encryption key pair from storage');
-      }
-
-      // Set own public key on me participant
-      if (this.me && this.keyPair) {
-        this.me.publicKey = await this.cryptoService.exportPublicKey(this.keyPair.publicKey);
-      }
-
-      this.encryptionEnabled = true;
-      return { chatId: this.chat.chatId ?? undefined };
-    } catch (error) {
-      console.error('Failed to initialize encryption:', error);
-      this.encryptionError = 'Failed to initialize encryption';
-      return { chatId: this.chat.chatId ?? undefined };
-    }
+        // Try to get existing key pair
+        return this.cryptoService.getKeyPair(this.me!.id).pipe(
+          switchMap(existingKeyPair => {
+            if (existingKeyPair) {
+              // Use existing key pair
+              this.keyPair = existingKeyPair;
+              console.log('Loaded existing encryption key pair from storage');
+              return this.cryptoService.exportPublicKey(this.keyPair.publicKey);
+            } else {
+              // Generate new key pair
+              return this.cryptoService.generateKeyPair().pipe(
+                switchMap(newKeyPair => {
+                  this.keyPair = newKeyPair;
+                  return this.cryptoService.storeKeyPair(this.me!.id, this.keyPair).pipe(
+                    switchMap(() => this.cryptoService.exportPublicKey(this.keyPair!.publicKey))
+                  );
+                }),
+                switchMap(publicKeyBase64 =>
+                  this.accountsService.registerPublicKey(this.me!.id, publicKeyBase64).pipe(
+                    tap(() => console.log('Generated and registered new encryption key pair')),
+                    map(() => publicKeyBase64)
+                  )
+                )
+              );
+            }
+          }),
+          tap(publicKeyBase64 => {
+            // Set own public key on me participant
+            if (this.me) {
+              this.me.publicKey = publicKeyBase64;
+            }
+            this.encryptionEnabled = true;
+          }),
+          map(() => ({ chatId: this.chat.chatId ?? undefined })),
+          catchError(error => {
+            console.error('Failed to initialize encryption:', error);
+            this.encryptionError = 'Failed to initialize encryption';
+            return of({ chatId: this.chat.chatId ?? undefined });
+          })
+        );
+      })
+    );
   }
 
   private handleMessageStateUpdate(result: { messageId: string; status: MessageStatus } | null) {
@@ -401,93 +435,100 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private async handleNewMessage(result: { message: UiMessage; update: boolean } | null) {
+  private handleNewMessage(result: { message: UiMessage; update: boolean } | null) {
     if (!result?.message) return;
     if (this.chat.messages.some(m => m.messageId === result.message.messageId)) return;
 
     // Decrypt message if it's encrypted
-    const decryptedMessage = await this.decryptMessageIfNeeded(result.message);
-    decryptedMessage.statusString = this.statusString(decryptedMessage.status);
-    this.chat.messages.push(decryptedMessage);
+    this.decryptMessageIfNeeded(result.message).pipe(
+      tap(decryptedMessage => {
+        decryptedMessage.statusString = this.statusString(decryptedMessage.status);
+        this.chat.messages.push(decryptedMessage);
 
-    if (result.update) {
-      this.chatService.updateMessageStatus(decryptedMessage, MessageStatus.Seen);
-    }
-    this.scrollToBottom();
+        if (result.update) {
+          this.chatService.updateMessageStatus(decryptedMessage, MessageStatus.Seen);
+        }
+        this.scrollToBottom();
+      })
+    ).subscribe();
   }
 
-  private async decryptMessageIfNeeded(message: UiMessage): Promise<UiMessage> {
+  private decryptMessageIfNeeded(message: UiMessage): Observable<UiMessage> {
     if (message.content?.type !== 'encrypted' && message.content?.$type !== 'encrypted') {
-      return message;
+      return of(message);
     }
 
     if (!this.keyPair) {
       // Return message with placeholder if we don't have keys
-      return {
+      return of({
         ...message,
         content: {
           type: 'plain',
           $type: 'plain',
           content: '🔒 Encrypted message (unable to decrypt)'
-        }
-      };
+        } as PlainTextContent
+      });
     }
 
-    try {
-      const encryptedContent = message.content as EncryptedContent;
-      const senderPublicKey = this.chat.participants?.find(p => p.id === message.sender.id)?.publicKey
-        || message.sender.publicKey;
+    const encryptedContent = message.content as EncryptedContent;
 
-      if (!senderPublicKey) {
-        return {
-          ...message,
-          content: {
-            type: 'plain',
-            $type: 'plain',
-            content: '🔒 Encrypted message (sender key unavailable)'
-          }
-        };
-      }
+    // Find sender's public key from participants list
+    const sender = this.chat.participants?.find(p => p.id === message.sender.id);
+    const senderPublicKey = sender?.publicKey;
 
-      const myEncryptedKey = encryptedContent.encryptedKeys[this.me!.id];
-      if (!myEncryptedKey) {
-        return {
-          ...message,
-          content: {
-            type: 'plain',
-            $type: 'plain',
-            content: '🔒 Encrypted message (not encrypted for you)'
-          }
-        };
-      }
+    if (!senderPublicKey) {
+      console.warn('Sender public key not found for:', message.sender.id);
+      console.warn('Available participants:', this.chat.participants?.map(p => ({ id: p.id, hasKey: !!p.publicKey })));
+      return of({
+        ...message,
+        content: {
+          type: 'plain',
+          $type: 'plain',
+          content: '🔒 Encrypted message (sender key unavailable)'
+        } as PlainTextContent
+      });
+    }
 
-      const decryptedText = await this.cryptoService.decryptMessage(
-        encryptedContent.content,
-        encryptedContent.iv,
-        myEncryptedKey,
-        senderPublicKey,
-        this.keyPair
-      );
+    const myEncryptedKey = encryptedContent.encryptedKeys[this.me!.id];
+    if (!myEncryptedKey) {
+      console.warn('No encrypted key found for current user:', this.me!.id);
+      return of({
+        ...message,
+        content: {
+          type: 'plain',
+          $type: 'plain',
+          content: '🔒 Encrypted message (not encrypted for you)'
+        } as PlainTextContent
+      });
+    }
 
-      return {
+    return this.cryptoService.decryptMessage(
+      encryptedContent.content,
+      encryptedContent.iv,
+      myEncryptedKey,
+      senderPublicKey,
+      this.keyPair
+    ).pipe(
+      map(decryptedText => ({
         ...message,
         content: {
           type: 'plain',
           $type: 'plain',
           content: decryptedText
-        }
-      };
-    } catch (error) {
-      console.error('Failed to decrypt message:', error);
-      return {
-        ...message,
-        content: {
-          type: 'plain',
-          $type: 'plain',
-          content: '🔒 Encrypted message (decryption failed)'
-        }
-      };
-    }
+        } as PlainTextContent
+      })),
+      catchError(error => {
+        console.error('Failed to decrypt message:', error);
+        return of({
+          ...message,
+          content: {
+            type: 'plain',
+            $type: 'plain',
+            content: '🔒 Encrypted message (decryption failed)'
+          } as PlainTextContent
+        });
+      })
+    );
   }
 
   private handleMessageFailed(result: UiMessage | null) {

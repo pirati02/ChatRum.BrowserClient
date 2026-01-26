@@ -71,7 +71,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
     this.subscriptions.push(acceptedSub);
   }
 
-  startPrivateChat($event: PeerResponse): void {
+  startPrivateChat($event: PeerExtended): void {
     this.accountsService.loadAccount($event.peerId)
       .pipe(
         tap(receiver => {
@@ -79,6 +79,7 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
             queryParams: {
               receivers: JSON.stringify([receiver]),
               me: JSON.stringify(this.account),
+              newChat: $event.checked,
               isGroupChat: false
             }
           }).then();
