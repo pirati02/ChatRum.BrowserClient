@@ -1,4 +1,3 @@
-
 /**
  * Key pair for ECDH encryption
  */

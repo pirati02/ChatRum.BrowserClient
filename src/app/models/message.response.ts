@@ -1,6 +1,6 @@
-import {MessageStatus} from "./message.status";
-import {Participant} from "./participant";
-import {MessageContentUnion} from "./message.content";
+import { MessageStatus } from './message.status';
+import { Participant } from './participant';
+import { MessageContentUnion } from './message.content';
 
 export interface MessageResponse {
   chatId: string;

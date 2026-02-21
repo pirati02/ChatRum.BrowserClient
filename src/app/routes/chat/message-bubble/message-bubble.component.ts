@@ -1,11 +1,11 @@
-import {Component, EventEmitter, Input, Output} from "@angular/core";
-import {Participant} from "../../../models/participant";
-import {UiMessage} from "../chat.component";
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Participant } from '../../../models/participant';
+import { UiMessage } from '../chat.component';
 
 @Component({
   selector: 'app-message-bubble',
   templateUrl: './message-bubble.component.html',
-  styleUrls: ['./message-bubble.component.scss']
+  styleUrls: ['./message-bubble.component.scss'],
 })
 export class MessageBubbleComponent {
   @Input() message!: UiMessage;
@@ -19,7 +19,7 @@ export class MessageBubbleComponent {
   }
 
   get displayName(): string {
-    return this.isSender ? 'you' : (this.participant?.nickName || '');
+    return this.isSender ? 'you' : this.participant?.nickName || '';
   }
 
   get alignStyle(): 'start' | 'end' {

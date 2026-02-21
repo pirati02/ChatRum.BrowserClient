@@ -1,21 +1,26 @@
-<div class="d-flex flex-column message-bubble"
-     [class.message-box-mine]="isSender"
-     [class.message-box-others]="!isSender"
-     [class.message-box-failed]="message.statusString === 'failed'">
+<div
+  class="d-flex flex-column message-bubble"
+  [class.message-box-mine]="isSender"
+  [class.message-box-others]="!isSender"
+  [class.message-box-failed]="message.statusString === 'failed'"
+>
   <span class="sender-name">{{ displayName }}</span>
 
-  <app-message-content
-    [content]="message.content"
-    [alignStyle]="alignStyle">
+  <app-message-content [content]="message.content" [alignStyle]="alignStyle">
   </app-message-content>
 
   <div class="status-row" *ngIf="isSender">
-    <span class="status-text" [class.status-failed]="message.statusString === 'failed'">
+    <span
+      class="status-text"
+      [class.status-failed]="message.statusString === 'failed'"
+    >
       {{ message.statusString }}
     </span>
-    <button *ngIf="message.statusString === 'failed'"
-            class="retry-btn"
-            (click)="onRetry()">
+    <button
+      *ngIf="message.statusString === 'failed'"
+      class="retry-btn"
+      (click)="onRetry()"
+    >
       <mat-icon class="retry-icon">refresh</mat-icon>
       Retry
     </button>

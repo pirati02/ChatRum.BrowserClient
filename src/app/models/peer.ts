@@ -1,4 +1,4 @@
 export interface Peer {
-    peerId: string, 
-    userName: string
+  peerId: string;
+  userName: string;
 }

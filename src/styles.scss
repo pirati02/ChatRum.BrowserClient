@@ -7,7 +7,6 @@
   height: 25px;
 }
 
-
 .d-flex {
   display: flex;
 }
@@ -83,7 +82,6 @@ body {
   height: 24px;
 }
 
-
 .border {
   border: 1px solid #dee2e6 !important;
 }
@@ -154,7 +152,6 @@ body {
   }
 }
 
-
 @media only screen and (max-height: 800px) and (min-height: 620px) {
   .tab-list-footer-page {
     grid-template-rows: 50px 65dvh 15dvh 10dvh;
@@ -167,14 +164,15 @@ body {
   }
 }
 
-
 .card {
   max-width: 350px;
   border-radius: 16px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   background-color: #fff;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .card:hover {
@@ -217,4 +215,3 @@ body {
 .card-btn:hover {
   background-color: #303f9f;
 }
-

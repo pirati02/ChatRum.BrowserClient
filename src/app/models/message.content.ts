@@ -26,4 +26,8 @@ export interface EncryptedContent extends MessageContent {
   encryptedKeys: { [recipientId: string]: string };
 }
 
-export type MessageContentUnion = PlainTextContent | LinkContent | ImageContent | EncryptedContent;
+export type MessageContentUnion =
+  | PlainTextContent
+  | LinkContent
+  | ImageContent
+  | EncryptedContent;

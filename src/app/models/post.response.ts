@@ -1,4 +1,4 @@
-import {Participant} from "./participant";
+import { Participant } from './participant';
 
 export interface PostDocumentResponse {
   id: string;
@@ -17,13 +17,13 @@ export interface Reaction {
 }
 
 export type ReactionType =
-  | "Like"
-  | "Heart"
-  | "Laugh"
-  | "Wow"
-  | "Sad"
-  | "Angry"
-  | "Care";
+  | 'Like'
+  | 'Heart'
+  | 'Laugh'
+  | 'Wow'
+  | 'Sad'
+  | 'Angry'
+  | 'Care';
 
 export interface Share {
   actor: Participant;

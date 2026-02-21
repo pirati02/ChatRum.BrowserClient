@@ -1,0 +1,41 @@
+```css
+.feed-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.post-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.post-card:hover {
+  transform: translateY(-5px);
+}
+
+.post-title {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.post-author {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.post-timestamp {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.post-body {
+  font-size: 18px;
+  line-height: 1.6;
+}
+```
