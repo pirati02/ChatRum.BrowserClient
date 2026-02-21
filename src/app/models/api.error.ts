@@ -1,4 +1,4 @@
-import {ErrorType} from "./error.types";
+import { ErrorType } from './error.types';
 
 export interface ApiError {
   code: string;

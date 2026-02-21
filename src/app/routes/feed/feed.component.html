@@ -18,8 +18,12 @@
           <h2>Create a New Post</h2>
           <span class="create-post-icon">✨</span>
         </div>
-        
-        <form [formGroup]="newPostForm" (ngSubmit)="createPost()" class="create-post-form">
+
+        <form
+          [formGroup]="newPostForm"
+          (ngSubmit)="createPost()"
+          class="create-post-form"
+        >
           <div class="form-group">
             <label for="title" class="form-label">Title</label>
             <input
@@ -29,12 +33,17 @@
               formControlName="title"
               placeholder="What's on your mind?"
             />
-            <div *ngIf="newPostForm.get('title')?.invalid && newPostForm.get('title')?.touched" 
-                 class="form-error">
+            <div
+              *ngIf="
+                newPostForm.get('title')?.invalid &&
+                newPostForm.get('title')?.touched
+              "
+              class="form-error"
+            >
               Title is required
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="description" class="form-label">Description</label>
             <textarea
@@ -44,17 +53,23 @@
               formControlName="description"
               placeholder="Share your story, thoughts, or experiences..."
             ></textarea>
-            <div *ngIf="newPostForm.get('description')?.invalid && newPostForm.get('description')?.touched" 
-                 class="form-error">
+            <div
+              *ngIf="
+                newPostForm.get('description')?.invalid &&
+                newPostForm.get('description')?.touched
+              "
+              class="form-error"
+            >
               Description is required
             </div>
           </div>
-          
+
           <button
             type="submit"
             class="post-submit-btn"
             [disabled]="submitting || newPostForm.invalid"
-            [class.loading]="submitting">
+            [class.loading]="submitting"
+          >
             <span *ngIf="!submitting" class="btn-content">
               <span class="btn-icon">📝</span>
               <span>Publish Post</span>
@@ -79,11 +94,18 @@
         <ng-container *ngIf="postDocuments.length > 0; else emptyFeed">
           <h3 class="posts-header">Recent Posts</h3>
           <div class="posts-grid">
-            <article *ngFor="let post of postDocuments; trackBy: trackByPostId" 
-                     class="post-card">
+            <article
+              *ngFor="let post of postDocuments; trackBy: trackByPostId"
+              class="post-card"
+            >
               <div class="post-header">
                 <div class="author-avatar">
-                  {{ getAuthorInitials(post.creator.firstName, post.creator.lastName) }}
+                  {{
+                    getAuthorInitials(
+                      post.creator.firstName,
+                      post.creator.lastName
+                    )
+                  }}
                 </div>
                 <div class="author-info">
                   <h4 class="author-name">
@@ -92,12 +114,12 @@
                   <p class="post-time">Just now</p>
                 </div>
               </div>
-              
+
               <div class="post-content">
                 <h3 class="post-title">{{ post.title }}</h3>
                 <p class="post-description">{{ post.description }}</p>
               </div>
-              
+
               <div class="post-footer">
                 <button class="post-action-btn">
                   <span class="action-icon">👍</span>
@@ -121,7 +143,10 @@
             <div class="empty-feed-icon">📝</div>
             <h3>No posts yet!</h3>
             <p>Be the first to share something amazing with the community.</p>
-            <button class="create-first-post-btn" (click)="scrollToCreatePost()">
+            <button
+              class="create-first-post-btn"
+              (click)="scrollToCreatePost()"
+            >
               Create Your First Post
             </button>
           </div>

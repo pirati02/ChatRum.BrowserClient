@@ -3,11 +3,15 @@
     <span style="font-size: 1.2em">{{ content.content }}</span>
   </ng-container>
   <ng-container *ngSwitchCase="'link'">
-    <a style="font-size: 1.2em" [href]="content.content" target="_blank">{{ content.content }}</a>
+    <a style="font-size: 1.2em" [href]="content.content" target="_blank">{{
+      content.content
+    }}</a>
   </ng-container>
   <ng-container *ngSwitchCase="'image'">
-    <img [src]="'data:image/png;base64,' + content.content"
-         style="max-width: 20rem; max-height: 20rem;"
-         [ngStyle]="{'align-self': alignStyle}">
+    <img
+      [src]="'data:image/png;base64,' + content.content"
+      style="max-width: 20rem; max-height: 20rem"
+      [ngStyle]="{ 'align-self': alignStyle }"
+    />
   </ng-container>
 </ng-container>

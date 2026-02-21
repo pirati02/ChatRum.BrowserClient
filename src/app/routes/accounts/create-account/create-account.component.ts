@@ -1,24 +1,22 @@
-import {Component, OnInit} from "@angular/core";
-import {AccountsService} from "../../../services/accounts.service";
-import {Router} from "@angular/router";
-import {FormBuilder, FormGroup, Validators} from "@angular/forms";
+import { Component, OnInit } from '@angular/core';
+import { AccountsService } from '../../../services/accounts.service';
+import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-create-account',
   templateUrl: './create-account.component.html',
-  styleUrls: ['./create-account.component.scss']
+  styleUrls: ['./create-account.component.scss'],
 })
 export class CreateAccountComponent implements OnInit {
-
   accountForm!: FormGroup;
   isSubmitting = false;
 
   constructor(
     private fb: FormBuilder,
     private accountsService: AccountsService,
-    private router: Router
-  ) {
-  }
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.accountForm = this.fb.group({
@@ -28,7 +26,7 @@ export class CreateAccountComponent implements OnInit {
       lastName: ['', Validators.required],
       password: ['', [Validators.required, Validators.minLength(6)]],
       phoneNumber: ['', Validators.required],
-      countryCode: ['', Validators.required]
+      countryCode: ['', Validators.required],
     });
   }
 
@@ -42,7 +40,8 @@ export class CreateAccountComponent implements OnInit {
 
     const newAccount = this.accountForm.value;
 
-    this.accountsService.createAccount(newAccount)
+    this.accountsService
+      .createAccount(newAccount)
       .pipe()
       .subscribe({
         next: (accountId: string) => {
@@ -52,7 +51,7 @@ export class CreateAccountComponent implements OnInit {
         error: (err) => {
           console.error('Failed to create account', err);
           this.isSubmitting = false;
-        }
+        },
       });
   }
 

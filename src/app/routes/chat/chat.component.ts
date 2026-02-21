@@ -1,52 +1,81 @@
-import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from "@angular/core";
-import {ChatService} from "../../services/chat.service";
-import {catchError, delay, mergeMap, Observable, of, Subscription, tap, from, switchMap, map, concatMap} from "rxjs";
-import {MessageRequest} from "../../models/message.request";
-import {MessageResponse} from "../../models/message.response";
-import {MessageStatus} from "../../models/message.status";
-import {ActivatedRoute} from "@angular/router";
-import {ApiError} from "../../models/api.error";
-import {ErrorType} from "../../models/error.types";
-import {Participant} from "../../models/participant";
-import {Account} from "../../models/account";
-import {MatDialog} from "@angular/material/dialog";
-import {ChatDetailsComponent, ChatDetailsData} from "../chat-details/chat-details.component";
-import {ChatResponse} from "../../models/chat.response";
-import {EncryptedContent, ImageContent, PlainTextContent} from "../../models/message.content";
-import {HelperService} from "../../services/helper.service";
-import {SendFileEvent, SendMessageEvent} from "./message-input/message-input.component";
-import {CryptoService} from "../../services/crypto.service";
-import {AccountsService} from "../../services/accounts.service";
-import {KeyPair, RecipientPublicKey} from "../../models/encrypted-message";
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { ChatService } from '../../services/chat.service';
+import {
+  catchError,
+  delay,
+  mergeMap,
+  Observable,
+  of,
+  Subscription,
+  tap,
+  from,
+  switchMap,
+  map,
+  concatMap,
+} from 'rxjs';
+import { MessageRequest } from '../../models/message.request';
+import { MessageResponse } from '../../models/message.response';
+import { MessageStatus } from '../../models/message.status';
+import { ActivatedRoute } from '@angular/router';
+import { ApiError } from '../../models/api.error';
+import { ErrorType } from '../../models/error.types';
+import { Participant } from '../../models/participant';
+import { Account } from '../../models/account';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  ChatDetailsComponent,
+  ChatDetailsData,
+} from '../chat-details/chat-details.component';
+import { ChatResponse } from '../../models/chat.response';
+import {
+  EncryptedContent,
+  ImageContent,
+  PlainTextContent,
+} from '../../models/message.content';
+import { HelperService } from '../../services/helper.service';
+import {
+  SendFileEvent,
+  SendMessageEvent,
+} from './message-input/message-input.component';
+import { CryptoService } from '../../services/crypto.service';
+import { AccountsService } from '../../services/accounts.service';
+import { KeyPair, RecipientPublicKey } from '../../models/encrypted-message';
 
-export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | ''
+export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | '';
 
 export interface UiMessage extends MessageResponse {
-  statusString: string,
+  statusString: string;
 }
 
 interface Chat {
   chatId: string | null;
-  messages: UiMessage[],
-  participants?: Participant[],
-  creator: Participant | null,
-  createdDate: string | null
+  messages: UiMessage[];
+  participants?: Participant[];
+  creator: Participant | null;
+  createdDate: string | null;
 }
 
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.scss']
+  styleUrls: ['./chat.component.scss'],
 })
 export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
-
   @ViewChild('scrollElement') scrollContainer?: ElementRef<HTMLDivElement>;
   chat: Chat = <Chat>{
     chatId: null,
     messages: [],
     participants: [],
     creator: null,
-    createdDate: null
+    createdDate: null,
   };
 
   me?: Participant;
@@ -64,9 +93,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     private dialog: MatDialog,
     private helperService: HelperService,
     private cryptoService: CryptoService,
-    private accountsService: AccountsService
-  ) {
-  }
+    private accountsService: AccountsService,
+  ) {}
 
   ngOnInit() {
     this.gatherChatInfo()
@@ -74,46 +102,47 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         // Initialize encryption before starting connection
         switchMap(() => this.initializeEncryption()),
         tap(() => {
-          this.chatService.startConnection(this.me?.id!)
+          this.chatService.startConnection(this.me?.id!);
         }),
         delay(1000),
-        mergeMap(({chatId}) => {
+        mergeMap(({ chatId }) => {
           if (this.overrideExisting) {
             return of();
           }
 
           if (chatId) {
-            return this.chatService.getChat(chatId)
-              .pipe(
-                switchMap(res => this.initializeChat(res))
-              )
+            return this.chatService
+              .getChat(chatId)
+              .pipe(switchMap((res) => this.initializeChat(res)));
           }
 
-          if (this.startNewChat){
+          if (this.startNewChat) {
             this.startChatInternal().subscribe(() => this.scrollToBottom());
             return of(null);
           }
-          
-          return this.chatService.findChat(this.chat?.participants!)
-            .pipe(
-              switchMap(res => this.initializeChat(res)),
-              catchError(err => {
-                let apiErrors: ApiError[] = [];
 
-                if (err.error) {
-                  apiErrors = Array.isArray(err.error) ? err.error : [err.error];
-                }
+          return this.chatService.findChat(this.chat?.participants!).pipe(
+            switchMap((res) => this.initializeChat(res)),
+            catchError((err) => {
+              let apiErrors: ApiError[] = [];
 
-                const convNotFound = apiErrors.find(e => e.type === ErrorType.NotFound);
-                if (convNotFound) {
-                  this.startChatInternal().subscribe(() => this.scrollToBottom());
-                }
+              if (err.error) {
+                apiErrors = Array.isArray(err.error) ? err.error : [err.error];
+              }
 
-                return of(null);
-              })
-            );
-        })
-      ).subscribe();
+              const convNotFound = apiErrors.find(
+                (e) => e.type === ErrorType.NotFound,
+              );
+              if (convNotFound) {
+                this.startChatInternal().subscribe(() => this.scrollToBottom());
+              }
+
+              return of(null);
+            }),
+          );
+        }),
+      )
+      .subscribe();
 
     this.startListeners();
   }
@@ -124,7 +153,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.chatService.stopConnection();
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 
   onSendMessage(event: SendMessageEvent) {
@@ -132,74 +161,94 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!content) return;
 
     // If encryption is enabled and we have keys, encrypt the message
-    if (this.encryptionEnabled && this.keyPair && this.hasAllParticipantKeys()) {
+    if (
+      this.encryptionEnabled &&
+      this.keyPair &&
+      this.hasAllParticipantKeys()
+    ) {
       this.sendEncryptedMessage(content);
     } else {
       // Fallback to unencrypted message
-      const messageContent: PlainTextContent = this.helperService.isLink(content)
-        ? {type: 'link', $type: 'link', content} as any as PlainTextContent
-        : {type: 'plain', $type: 'plain', content};
+      const messageContent: PlainTextContent = this.helperService.isLink(
+        content,
+      )
+        ? ({ type: 'link', $type: 'link', content } as any as PlainTextContent)
+        : { type: 'plain', $type: 'plain', content };
 
       this.dispatchMessage({
         sender: this.me!,
         content: messageContent,
-        replyOf: null
+        replyOf: null,
       });
     }
   }
 
   private sendEncryptedMessage(content: string) {
     const recipients = this.getRecipientsWithKeys();
-    console.log('Encrypting message for recipients:', recipients.map(r => r.recipientId));
+    console.log(
+      'Encrypting message for recipients:',
+      recipients.map((r) => r.recipientId),
+    );
 
-    this.cryptoService.encryptMessage(
-      content,
-      recipients,
-      this.keyPair!
-    ).pipe(
-      tap(encryptionResult => {
-        const encryptedContent: EncryptedContent = {
-          type: 'encrypted',
-          $type: 'encrypted',
-          content: encryptionResult.encryptedContent,
-          iv: encryptionResult.iv,
-          encryptedKeys: encryptionResult.encryptedKeys
-        };
+    this.cryptoService
+      .encryptMessage(content, recipients, this.keyPair!)
+      .pipe(
+        tap((encryptionResult) => {
+          const encryptedContent: EncryptedContent = {
+            type: 'encrypted',
+            $type: 'encrypted',
+            content: encryptionResult.encryptedContent,
+            iv: encryptionResult.iv,
+            encryptedKeys: encryptionResult.encryptedKeys,
+          };
 
-        this.dispatchMessage({
-          sender: this.me!,
-          content: encryptedContent,
-          replyOf: null
-        });
-      }),
-      catchError(error => {
-        console.error('Failed to encrypt message:', error);
-        // Fallback to plain text if encryption fails
-        const messageContent: PlainTextContent = this.helperService.isLink(content)
-          ? {type: 'link', $type: 'link', content} as any as PlainTextContent
-          : {type: 'plain', $type: 'plain', content};
+          this.dispatchMessage({
+            sender: this.me!,
+            content: encryptedContent,
+            replyOf: null,
+          });
+        }),
+        catchError((error) => {
+          console.error('Failed to encrypt message:', error);
+          // Fallback to plain text if encryption fails
+          const messageContent: PlainTextContent = this.helperService.isLink(
+            content,
+          )
+            ? ({
+                type: 'link',
+                $type: 'link',
+                content,
+              } as any as PlainTextContent)
+            : { type: 'plain', $type: 'plain', content };
 
-        this.dispatchMessage({
-          sender: this.me!,
-          content: messageContent,
-          replyOf: null
-        });
-        return of(null);
-      })
-    ).subscribe();
+          this.dispatchMessage({
+            sender: this.me!,
+            content: messageContent,
+            replyOf: null,
+          });
+          return of(null);
+        }),
+      )
+      .subscribe();
   }
 
   private hasAllParticipantKeys(): boolean {
-    return this.chat.participants?.every(p => p.id === this.me?.id || !!p.publicKey) ?? false;
+    return (
+      this.chat.participants?.every(
+        (p) => p.id === this.me?.id || !!p.publicKey,
+      ) ?? false
+    );
   }
 
   private getRecipientsWithKeys(): RecipientPublicKey[] {
-    return this.chat.participants
-      ?.filter(p => p.publicKey)
-      .map(p => ({
-        recipientId: p.id,
-        publicKey: p.publicKey!
-      })) ?? [];
+    return (
+      this.chat.participants
+        ?.filter((p) => p.publicKey)
+        .map((p) => ({
+          recipientId: p.id,
+          publicKey: p.publicKey!,
+        })) ?? []
+    );
   }
 
   onSendFile(event: SendFileEvent) {
@@ -207,11 +256,11 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = (reader.result as string).split(",")[1];
+      const base64 = (reader.result as string).split(',')[1];
       this.dispatchMessage({
         sender: this.me!,
-        content: <ImageContent>{type: 'image', content: base64},
-        replyOf: null
+        content: <ImageContent>{ type: 'image', content: base64 },
+        replyOf: null,
       });
     };
     reader.readAsDataURL(event.file);
@@ -221,7 +270,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     const send$ = this.chat.chatId
       ? this.chatService.sendMessage(this.chat.chatId, message)
       : this.startChatInternal().pipe(
-          mergeMap(() => this.chatService.sendMessage(this.chat.chatId!, message))
+          mergeMap(() =>
+            this.chatService.sendMessage(this.chat.chatId!, message),
+          ),
         );
 
     send$.subscribe(() => this.scrollToBottom());
@@ -233,8 +284,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       data: <ChatDetailsData>{
         participants: this.chat.participants,
         creator: this.chat.creator,
-        createdDate: this.chat.createdDate
-      }
+        createdDate: this.chat.createdDate,
+      },
     });
   }
 
@@ -244,15 +295,17 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     message.status = MessageStatus.Sent;
     message.statusString = this.statusString(MessageStatus.Sent);
 
-    this.chatService.sendMessage(this.chat.chatId, {
-      sender: message.sender,
-      content: message.content,
-      replyOf: message.replyOf
-    }).subscribe();
+    this.chatService
+      .sendMessage(this.chat.chatId, {
+        sender: message.sender,
+        content: message.content,
+        replyOf: message.replyOf,
+      })
+      .subscribe();
   }
 
   getReceiver(id: string): Participant | undefined {
-    return this.chat?.participants?.find(p => p.id === id);
+    return this.chat?.participants?.find((p) => p.id === id);
   }
 
   private initializeChat(res: ChatResponse): Observable<void> {
@@ -262,7 +315,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       messages: [],
       participants: res.participants,
       creator: res.creator,
-      createdDate: res.createdDate
+      createdDate: res.createdDate,
     };
 
     // Decrypt messages if needed
@@ -272,41 +325,47 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return from(res.messages).pipe(
-      map(m => this.toUiMessage(m)),
-      concatMap(uiMessage => this.decryptMessageIfNeeded(uiMessage)),
-      tap(decryptedMessage => {
+      map((m) => this.toUiMessage(m)),
+      concatMap((uiMessage) => this.decryptMessageIfNeeded(uiMessage)),
+      tap((decryptedMessage) => {
         this.chat.messages.push(decryptedMessage);
       }),
       map(() => undefined),
       tap({
-        complete: () => this.markUnreadMessagesAsSeen()
-      })
+        complete: () => this.markUnreadMessagesAsSeen(),
+      }),
     );
   }
 
   private toUiMessage(message: MessageResponse): UiMessage {
     return {
       ...message,
-      statusString: this.statusString(message.status)
+      statusString: this.statusString(message.status),
     };
   }
 
   private markUnreadMessagesAsSeen() {
-    const otherParticipantIds = this.chat.participants
-      ?.filter(p => p.id !== this.me?.id)
-      .map(p => p.id) ?? [];
+    const otherParticipantIds =
+      this.chat.participants
+        ?.filter((p) => p.id !== this.me?.id)
+        .map((p) => p.id) ?? [];
 
-    const unreadMessages = this.chat.messages.filter(m =>
-      [MessageStatus.Sent, MessageStatus.Delivered].includes(m.status) &&
-      otherParticipantIds.includes(m.sender.id)
+    const unreadMessages = this.chat.messages.filter(
+      (m) =>
+        [MessageStatus.Sent, MessageStatus.Delivered].includes(m.status) &&
+        otherParticipantIds.includes(m.sender.id),
     );
 
     if (unreadMessages.length === 0) return;
 
-    this.chatService.markAsRead(this.chat.chatId!, unreadMessages.map(m => m.messageId))
-      .subscribe(success => {
+    this.chatService
+      .markAsRead(
+        this.chat.chatId!,
+        unreadMessages.map((m) => m.messageId),
+      )
+      .subscribe((success) => {
         if (success) {
-          this.chat.messages.forEach(m => {
+          this.chat.messages.forEach((m) => {
             m.status = MessageStatus.Seen;
             m.statusString = this.statusString(MessageStatus.Seen);
           });
@@ -315,37 +374,38 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private startChatInternal() {
-    const chatName = this.chat.participants?.length! > 2
-      ? this.chat?.participants!.map(p => p.nickName).join(', ')
-      : this.chat?.participants!.find(p => p.id !== this.me?.id)?.nickName;
+    const chatName =
+      this.chat.participants?.length! > 2
+        ? this.chat?.participants!.map((p) => p.nickName).join(', ')
+        : this.chat?.participants!.find((p) => p.id !== this.me?.id)?.nickName;
 
     return this.chatService.startChat(
       this.chat?.participants!!,
       this.me!,
       chatName!,
-      this.overrideExisting
+      this.overrideExisting,
     );
   }
 
   private gatherChatInfo(): Observable<any> {
     return this.activatedRoute.queryParams.pipe(
-      tap(params => {
+      tap((params) => {
         const receivers = JSON.parse(params['receivers']) as Account[];
         const me = JSON.parse(params['me']) as Account;
 
         this.me = this.toParticipant(me);
-        this.startNewChat = params["newChat"] === "true";
-        this.overrideExisting = params["overrideExisting"] === "true";
+        this.startNewChat = params['newChat'] === 'true';
+        this.overrideExisting = params['overrideExisting'] === 'true';
         this.chat = {
           ...this.chat,
-          chatId: params["chatId"],
+          chatId: params['chatId'],
           participants: [
             ...this.chat.participants!,
-            ...receivers.map(r => this.toParticipant(r)),
-            this.me
-          ]
+            ...receivers.map((r) => this.toParticipant(r)),
+            this.me,
+          ],
         };
-      })
+      }),
     );
   }
 
@@ -356,16 +416,24 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       lastName: account.lastName,
       nickName: account.userName,
       isAdmin: false,
-      publicKey: account.publicKey // Preserve public key if it exists
+      publicKey: account.publicKey, // Preserve public key if it exists
     };
   }
 
   private startListeners() {
     this.subscriptions.push(
-      this.chatService.chatStarted$.subscribe(res => this.chat.chatId = res!),
-      this.chatService.updateMessageState$.subscribe(result => this.handleMessageStateUpdate(result)),
-      this.chatService.chatAppendMessage$.subscribe(result => this.handleNewMessage(result)),
-      this.chatService.messageFailed$.subscribe(result => this.handleMessageFailed(result))
+      this.chatService.chatStarted$.subscribe(
+        (res) => (this.chat.chatId = res!),
+      ),
+      this.chatService.updateMessageState$.subscribe((result) =>
+        this.handleMessageStateUpdate(result),
+      ),
+      this.chatService.chatAppendMessage$.subscribe((result) =>
+        this.handleNewMessage(result),
+      ),
+      this.chatService.messageFailed$.subscribe((result) =>
+        this.handleMessageFailed(result),
+      ),
     );
   }
 
@@ -374,16 +442,17 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private initializeEncryption(): Observable<{ chatId?: string }> {
     return this.cryptoService.isStorageAvailable().pipe(
-      switchMap(storageAvailable => {
+      switchMap((storageAvailable) => {
         if (!storageAvailable) {
-          this.encryptionError = 'Secure storage unavailable (private browsing mode?)';
+          this.encryptionError =
+            'Secure storage unavailable (private browsing mode?)';
           console.warn('IndexedDB not available, encryption disabled');
           return of({ chatId: this.chat.chatId ?? undefined });
         }
 
         // Try to get existing key pair
         return this.cryptoService.getKeyPair(this.me!.id).pipe(
-          switchMap(existingKeyPair => {
+          switchMap((existingKeyPair) => {
             if (existingKeyPair) {
               // Use existing key pair
               this.keyPair = existingKeyPair;
@@ -392,22 +461,34 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
             } else {
               // Generate new key pair
               return this.cryptoService.generateKeyPair().pipe(
-                switchMap(newKeyPair => {
+                switchMap((newKeyPair) => {
                   this.keyPair = newKeyPair;
-                  return this.cryptoService.storeKeyPair(this.me!.id, this.keyPair).pipe(
-                    switchMap(() => this.cryptoService.exportPublicKey(this.keyPair!.publicKey))
-                  );
+                  return this.cryptoService
+                    .storeKeyPair(this.me!.id, this.keyPair)
+                    .pipe(
+                      switchMap(() =>
+                        this.cryptoService.exportPublicKey(
+                          this.keyPair!.publicKey,
+                        ),
+                      ),
+                    );
                 }),
-                switchMap(publicKeyBase64 =>
-                  this.accountsService.registerPublicKey(this.me!.id, publicKeyBase64).pipe(
-                    tap(() => console.log('Generated and registered new encryption key pair')),
-                    map(() => publicKeyBase64)
-                  )
-                )
+                switchMap((publicKeyBase64) =>
+                  this.accountsService
+                    .registerPublicKey(this.me!.id, publicKeyBase64)
+                    .pipe(
+                      tap(() =>
+                        console.log(
+                          'Generated and registered new encryption key pair',
+                        ),
+                      ),
+                      map(() => publicKeyBase64),
+                    ),
+                ),
               );
             }
           }),
-          tap(publicKeyBase64 => {
+          tap((publicKeyBase64) => {
             // Set own public key on me participant
             if (this.me) {
               this.me.publicKey = publicKeyBase64;
@@ -415,46 +496,65 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
             this.encryptionEnabled = true;
           }),
           map(() => ({ chatId: this.chat.chatId ?? undefined })),
-          catchError(error => {
+          catchError((error) => {
             console.error('Failed to initialize encryption:', error);
             this.encryptionError = 'Failed to initialize encryption';
             return of({ chatId: this.chat.chatId ?? undefined });
-          })
+          }),
         );
-      })
+      }),
     );
   }
 
-  private handleMessageStateUpdate(result: { messageId: string; status: MessageStatus } | null) {
+  private handleMessageStateUpdate(
+    result: { messageId: string; status: MessageStatus } | null,
+  ) {
     if (!result?.messageId) return;
 
-    const message = this.chat.messages.find(item => item.messageId === result.messageId);
+    const message = this.chat.messages.find(
+      (item) => item.messageId === result.messageId,
+    );
     if (message) {
       message.status = result.status;
       message.statusString = this.statusString(result.status);
     }
   }
 
-  private handleNewMessage(result: { message: UiMessage; update: boolean } | null) {
+  private handleNewMessage(
+    result: { message: UiMessage; update: boolean } | null,
+  ) {
     if (!result?.message) return;
-    if (this.chat.messages.some(m => m.messageId === result.message.messageId)) return;
+    if (
+      this.chat.messages.some((m) => m.messageId === result.message.messageId)
+    )
+      return;
 
     // Decrypt message if it's encrypted
-    this.decryptMessageIfNeeded(result.message).pipe(
-      tap(decryptedMessage => {
-        decryptedMessage.statusString = this.statusString(decryptedMessage.status);
-        this.chat.messages.push(decryptedMessage);
+    this.decryptMessageIfNeeded(result.message)
+      .pipe(
+        tap((decryptedMessage) => {
+          decryptedMessage.statusString = this.statusString(
+            decryptedMessage.status,
+          );
+          this.chat.messages.push(decryptedMessage);
 
-        if (result.update) {
-          this.chatService.updateMessageStatus(decryptedMessage, MessageStatus.Seen);
-        }
-        this.scrollToBottom();
-      })
-    ).subscribe();
+          if (result.update) {
+            this.chatService.updateMessageStatus(
+              decryptedMessage,
+              MessageStatus.Seen,
+            );
+          }
+          this.scrollToBottom();
+        }),
+      )
+      .subscribe();
   }
 
   private decryptMessageIfNeeded(message: UiMessage): Observable<UiMessage> {
-    if (message.content?.type !== 'encrypted' && message.content?.$type !== 'encrypted') {
+    if (
+      message.content?.type !== 'encrypted' &&
+      message.content?.$type !== 'encrypted'
+    ) {
       return of(message);
     }
 
@@ -465,27 +565,35 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         content: {
           type: 'plain',
           $type: 'plain',
-          content: '🔒 Encrypted message (unable to decrypt)'
-        } as PlainTextContent
+          content: '🔒 Encrypted message (unable to decrypt)',
+        } as PlainTextContent,
       });
     }
 
     const encryptedContent = message.content as EncryptedContent;
 
     // Find sender's public key from participants list
-    const sender = this.chat.participants?.find(p => p.id === message.sender.id);
+    const sender = this.chat.participants?.find(
+      (p) => p.id === message.sender.id,
+    );
     const senderPublicKey = sender?.publicKey;
 
     if (!senderPublicKey) {
       console.warn('Sender public key not found for:', message.sender.id);
-      console.warn('Available participants:', this.chat.participants?.map(p => ({ id: p.id, hasKey: !!p.publicKey })));
+      console.warn(
+        'Available participants:',
+        this.chat.participants?.map((p) => ({
+          id: p.id,
+          hasKey: !!p.publicKey,
+        })),
+      );
       return of({
         ...message,
         content: {
           type: 'plain',
           $type: 'plain',
-          content: '🔒 Encrypted message (sender key unavailable)'
-        } as PlainTextContent
+          content: '🔒 Encrypted message (sender key unavailable)',
+        } as PlainTextContent,
       });
     }
 
@@ -497,44 +605,48 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
         content: {
           type: 'plain',
           $type: 'plain',
-          content: '🔒 Encrypted message (not encrypted for you)'
-        } as PlainTextContent
+          content: '🔒 Encrypted message (not encrypted for you)',
+        } as PlainTextContent,
       });
     }
 
-    return this.cryptoService.decryptMessage(
-      encryptedContent.content,
-      encryptedContent.iv,
-      myEncryptedKey,
-      senderPublicKey,
-      this.keyPair
-    ).pipe(
-      map(decryptedText => ({
-        ...message,
-        content: {
-          type: 'plain',
-          $type: 'plain',
-          content: decryptedText
-        } as PlainTextContent
-      })),
-      catchError(error => {
-        console.error('Failed to decrypt message:', error);
-        return of({
+    return this.cryptoService
+      .decryptMessage(
+        encryptedContent.content,
+        encryptedContent.iv,
+        myEncryptedKey,
+        senderPublicKey,
+        this.keyPair,
+      )
+      .pipe(
+        map((decryptedText) => ({
           ...message,
           content: {
             type: 'plain',
             $type: 'plain',
-            content: '🔒 Encrypted message (decryption failed)'
-          } as PlainTextContent
-        });
-      })
-    );
+            content: decryptedText,
+          } as PlainTextContent,
+        })),
+        catchError((error) => {
+          console.error('Failed to decrypt message:', error);
+          return of({
+            ...message,
+            content: {
+              type: 'plain',
+              $type: 'plain',
+              content: '🔒 Encrypted message (decryption failed)',
+            } as PlainTextContent,
+          });
+        }),
+      );
   }
 
   private handleMessageFailed(result: UiMessage | null) {
     if (!result) return;
 
-    const message = this.chat.messages.find(item => item.messageId === result.messageId);
+    const message = this.chat.messages.find(
+      (item) => item.messageId === result.messageId,
+    );
     if (message) {
       message.status = MessageStatus.Failed;
       message.statusString = this.statusString(MessageStatus.Failed);
@@ -553,20 +665,22 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private statusString(status: 'Seen' | 'Sent' | 'Delivered' | 'Failed' | MessageStatus): uiStatus {
+  private statusString(
+    status: 'Seen' | 'Sent' | 'Delivered' | 'Failed' | MessageStatus,
+  ): uiStatus {
     switch (status) {
       case 'Sent':
       case MessageStatus.Sent:
-        return "sent";
+        return 'sent';
       case 'Delivered':
       case MessageStatus.Delivered:
-        return "delivered";
+        return 'delivered';
       case 'Seen':
       case MessageStatus.Seen:
-        return "seen";
+        return 'seen';
       case 'Failed':
       case MessageStatus.Failed:
-        return "failed";
+        return 'failed';
       default:
         return '';
     }

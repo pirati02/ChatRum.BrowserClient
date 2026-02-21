@@ -1,4 +1,4 @@
-export enum MessageStatus{
+export enum MessageStatus {
   Sent,
   Delivered,
   Seen,

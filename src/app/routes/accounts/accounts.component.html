@@ -8,14 +8,16 @@
             {{ account.userName }}
           </mat-option>
         </mat-select>
-<!--        <mat-select (selectionChange)="receiverSelected($event)">-->
-<!--          <mat-option *ngFor="let account of accounts" [value]="account">-->
-<!--            {{ account.userName }}-->
-<!--          </mat-option>-->
-<!--        </mat-select>-->
+        <!--        <mat-select (selectionChange)="receiverSelected($event)">-->
+        <!--          <mat-option *ngFor="let account of accounts" [value]="account">-->
+        <!--            {{ account.userName }}-->
+        <!--          </mat-option>-->
+        <!--        </mat-select>-->
       </div>
 
-      <button class="card-btn" (click)="openAccountDetails(sender?.id!)">Go to details</button>
+      <button class="card-btn" (click)="openAccountDetails(sender?.id!)">
+        Go to details
+      </button>
     </div>
   </div>
 </div>

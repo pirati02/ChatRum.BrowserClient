@@ -1,16 +1,15 @@
-import {Component, EventEmitter, OnInit, Output} from "@angular/core";
-import {AccountsService} from "../../../services/accounts.service";
-import {finalize, forkJoin, tap} from "rxjs";
-import {Account} from "../../../models/account";
-import {ActivatedRoute, Router} from "@angular/router";
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { AccountsService } from '../../../services/accounts.service';
+import { finalize, forkJoin, tap } from 'rxjs';
+import { Account } from '../../../models/account';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-account-info',
   templateUrl: './account-info.component.html',
-  styleUrls: ['./account-info.component.scss']
+  styleUrls: ['./account-info.component.scss'],
 })
 export class AccountInfoComponent implements OnInit {
-
   account?: Account;
   verificationCode?: string;
 
@@ -19,51 +18,50 @@ export class AccountInfoComponent implements OnInit {
   constructor(
     private accountsService: AccountsService,
     private activatedRoute: ActivatedRoute,
-    private router: Router
-  ) {
-  }
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.activatedRoute.params.subscribe(params => {
+    this.activatedRoute.params.subscribe((params) => {
       const accountId = params['accountId'] as string;
       this.loadAccountDetails(accountId);
     });
   }
 
-  verifyAccount(){
-    this.accountsService.verify(this.verificationCode!, this.account?.id!)
+  verifyAccount() {
+    this.accountsService
+      .verify(this.verificationCode!, this.account?.id!)
       .pipe(
         finalize(() => {
           this.loadAccountDetails(this.account?.id!);
-        })
+        }),
       )
-      .subscribe()
+      .subscribe();
   }
 
-  resendCode(){
-    this.accountsService.resendCode(this.account?.id!)
+  resendCode() {
+    this.accountsService
+      .resendCode(this.account?.id!)
       .pipe(
         finalize(() => {
           this.loadAccountDetails(this.account?.id!);
-        })
+        }),
       )
-      .subscribe()
+      .subscribe();
   }
 
-  modifyAccount(){
+  modifyAccount() {
     this.router.navigate([`account/${this.account?.id}/modify`]);
   }
 
   private loadAccountDetails(accountId: string) {
     forkJoin([
-      this.accountsService.loadAccount(accountId)
-        .pipe(
-          tap(account => {
-            this.account = account;
-            this.onAccount.emit(account);
-          })
-        )
-    ])
-      .subscribe();
+      this.accountsService.loadAccount(accountId).pipe(
+        tap((account) => {
+          this.account = account;
+          this.onAccount.emit(account);
+        }),
+      ),
+    ]).subscribe();
   }
 }
