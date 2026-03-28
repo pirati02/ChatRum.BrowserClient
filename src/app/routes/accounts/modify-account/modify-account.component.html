@@ -1,85 +1,85 @@
 <div class="create-account-page">
-  <div class="header">Edit {{ account?.userName }}</div>
+  <div class="create-account-page__inner">
+    <h1 class="create-account-page__title">Edit {{ account?.userName }}</h1>
 
-  <form
-    [formGroup]="accountForm"
-    class="account-form d-flex flex-column"
-    (ngSubmit)="onSubmit()"
-    style="gap: 1rem; max-width: 500px"
-  >
-    <!-- Username -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Username</mat-label>
-      <input matInput type="text" formControlName="userName" />
-      <mat-error
-        *ngIf="
-          accountForm.get('userName')?.invalid &&
-          accountForm.get('userName')?.touched
-        "
+    <div class="cr-card cr-card--form">
+      <form
+        [formGroup]="accountForm"
+        class="account-form d-flex flex-column"
+        (ngSubmit)="onSubmit()"
+        style="gap: 1rem"
       >
-        required (min 3 symbols)
-      </mat-error>
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput type="text" formControlName="userName" />
+          <mat-error
+            *ngIf="
+              accountForm.get('userName')?.invalid &&
+              accountForm.get('userName')?.touched
+            "
+          >
+            required (min. 3 symbols)
+          </mat-error>
+        </mat-form-field>
 
-    <!-- First Name -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>First Name</mat-label>
-      <input matInput type="text" formControlName="firstName" />
-      <mat-error
-        *ngIf="
-          accountForm.get('firstName')?.invalid &&
-          accountForm.get('firstName')?.touched
-        "
-      >
-        required
-      </mat-error>
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>First name</mat-label>
+          <input matInput type="text" formControlName="firstName" />
+          <mat-error
+            *ngIf="
+              accountForm.get('firstName')?.invalid &&
+              accountForm.get('firstName')?.touched
+            "
+          >
+            required
+          </mat-error>
+        </mat-form-field>
 
-    <!-- Last Name -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Last Name</mat-label>
-      <input matInput type="text" formControlName="lastName" />
-      <mat-error
-        *ngIf="
-          accountForm.get('lastName')?.invalid &&
-          accountForm.get('lastName')?.touched
-        "
-      >
-        required
-      </mat-error>
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Last name</mat-label>
+          <input matInput type="text" formControlName="lastName" />
+          <mat-error
+            *ngIf="
+              accountForm.get('lastName')?.invalid &&
+              accountForm.get('lastName')?.touched
+            "
+          >
+            required
+          </mat-error>
+        </mat-form-field>
 
-    <!-- Actions -->
-    <div class="d-flex flex-row" style="gap: 1rem; margin-top: 1rem">
-      <button
-        mat-flat-button
-        color="primary"
-        type="submit"
-        [disabled]="accountForm.invalid || isSubmitting"
-      >
-        <!-- Spinner inside button -->
-        <mat-progress-spinner
-          *ngIf="isSubmitting"
-          diameter="20"
-          mode="indeterminate"
-          color="accent"
-          style="margin-right: 0.5rem"
-        >
-        </mat-progress-spinner>
+        <div class="create-account-page__actions d-flex flex-row">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="accountForm.invalid || isSubmitting"
+            class="create-account-page__submit"
+          >
+            <mat-progress-spinner
+              *ngIf="isSubmitting"
+              diameter="20"
+              mode="indeterminate"
+              color="accent"
+              style="margin-right: 0.5rem"
+            >
+            </mat-progress-spinner>
 
-        <span *ngIf="!isSubmitting">Save</span>
-        <span *ngIf="isSubmitting">loading...</span>
-      </button>
+            <span *ngIf="!isSubmitting">Save</span>
+            <span *ngIf="isSubmitting">loading...</span>
+          </button>
 
-      <button
-        mat-stroked-button
-        color="warn"
-        type="button"
-        (click)="onCancel()"
-        [disabled]="isSubmitting"
-      >
-        Cancel
-      </button>
+          <button
+            mat-stroked-button
+            color="warn"
+            type="button"
+            (click)="onCancel()"
+            [disabled]="isSubmitting"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
 </div>

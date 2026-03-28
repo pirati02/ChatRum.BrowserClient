@@ -1,0 +1,114 @@
+/**
+ * Auth pages: stronger contrast for MDC labels, placeholders, checkbox, and primary CTA.
+ * (Global Material theme uses low-opacity tokens that read as “translucent” on glass cards.)
+ */
+.auth-page .cr-card form {
+  ::ng-deep {
+    /* Input text */
+    input.mat-mdc-input-element {
+      color: var(--post-text);
+
+      &::placeholder {
+        color: var(--text-secondary);
+        opacity: 1;
+      }
+    }
+
+    /* Floating labels — cover MDC inner + float states (theme often lowers opacity) */
+    .mat-mdc-floating-label,
+    .mat-mdc-floating-label .mdc-floating-label,
+    .mdc-floating-label {
+      color: var(--post-text) !important;
+    }
+
+    .mdc-text-field--focused .mat-mdc-floating-label .mdc-floating-label,
+    .mdc-text-field--focused .mdc-floating-label,
+    .mat-mdc-form-field.mat-focused .mat-mdc-floating-label .mdc-floating-label {
+      color: var(--accent-strong) !important;
+    }
+
+    mat-error,
+    .mat-mdc-form-field-error {
+      color: var(--error-text);
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      --mat-form-field-subscript-text-size: 0.75rem;
+    }
+
+    /* Outline stroke — visible but not harsh */
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__leading,
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__notch,
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__trailing {
+      border-color: var(--border-strong);
+    }
+
+    .mat-mdc-form-field.mat-focused .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__leading,
+    .mat-mdc-form-field.mat-focused .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__notch,
+    .mat-mdc-form-field.mat-focused .mdc-text-field--outlined:not(.mdc-text-field--disabled)
+      .mdc-notched-outline
+      .mdc-notched-outline__trailing {
+      border-color: var(--accent-strong);
+    }
+
+    /* Checkbox label + box */
+    .mat-mdc-checkbox label,
+    .mat-mdc-checkbox .mdc-label {
+      color: var(--post-text);
+      opacity: 1;
+    }
+
+    .mat-mdc-checkbox .mdc-checkbox__native-control:enabled:not(:checked):not(:indeterminate)
+      ~ .mdc-checkbox__background {
+      border-color: var(--post-muted);
+    }
+  }
+}
+
+.auth-page .auth-page__actions {
+  ::ng-deep {
+    /* mat-flat-button → unelevated filled */
+    .mat-mdc-unelevated-button.mat-primary {
+      --mdc-filled-button-container-color: var(--accent-strong);
+      --mdc-filled-button-label-text-color: #ffffff;
+      --mat-filled-button-state-layer-color: #ffffff;
+      --mat-filled-button-ripple-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .mat-mdc-unelevated-button.mat-primary .mdc-button__label,
+    .mat-mdc-unelevated-button.mat-primary .mat-icon {
+      color: #ffffff;
+    }
+
+    .mat-mdc-unelevated-button.mat-primary:disabled {
+      --mdc-filled-button-container-color: color-mix(
+        in srgb,
+        var(--accent-strong) 45%,
+        #94a3b8
+      );
+      --mdc-filled-button-label-text-color: rgba(255, 255, 255, 0.92);
+    }
+
+    /* mat-stroked-button / anchor */
+    .mat-mdc-outlined-button.mat-primary,
+    a.mat-mdc-outlined-button {
+      --mdc-outlined-button-label-text-color: var(--accent-strong);
+      --mdc-outlined-button-outline-color: var(--accent-strong);
+    }
+
+    .mat-mdc-outlined-button .mdc-button__label {
+      color: var(--accent-strong);
+      opacity: 1;
+    }
+  }
+}

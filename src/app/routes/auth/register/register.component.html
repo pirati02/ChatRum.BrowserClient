@@ -1,0 +1,122 @@
+<div class="auth-page auth-page--wide">
+  <div class="auth-page__inner">
+    <h1 class="auth-page__title">Create account</h1>
+
+    @if (errorMessage) {
+      <div class="auth-page__error" role="alert">{{ errorMessage }}</div>
+    }
+
+    <div class="cr-card cr-card--form">
+      <form
+        [formGroup]="accountForm"
+        class="account-form d-flex flex-column"
+        (ngSubmit)="onSubmit()"
+        style="gap: 1rem"
+      >
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username</mat-label>
+          <input matInput type="text" formControlName="userName" />
+          @if (
+            accountForm.get('userName')?.invalid &&
+            accountForm.get('userName')?.touched
+          ) {
+            <mat-error>required (min. 3 symbols)</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+          @if (
+            accountForm.get('email')?.invalid &&
+            accountForm.get('email')?.touched
+          ) {
+            <mat-error>make sure email is correct</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Phone number</mat-label>
+          <input matInput type="tel" formControlName="phoneNumber" />
+          @if (
+            accountForm.get('phoneNumber')?.invalid &&
+            accountForm.get('phoneNumber')?.touched
+          ) {
+            <mat-error>required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Country code</mat-label>
+          <input matInput type="text" formControlName="countryCode" />
+          @if (
+            accountForm.get('countryCode')?.invalid &&
+            accountForm.get('countryCode')?.touched
+          ) {
+            <mat-error>required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>First name</mat-label>
+          <input matInput type="text" formControlName="firstName" />
+          @if (
+            accountForm.get('firstName')?.invalid &&
+            accountForm.get('firstName')?.touched
+          ) {
+            <mat-error>required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Last name</mat-label>
+          <input matInput type="text" formControlName="lastName" />
+          @if (
+            accountForm.get('lastName')?.invalid &&
+            accountForm.get('lastName')?.touched
+          ) {
+            <mat-error>required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" />
+          @if (
+            accountForm.get('password')?.invalid &&
+            accountForm.get('password')?.touched
+          ) {
+            <mat-error>required (min 6 symbols)</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="auth-page__actions d-flex flex-row">
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            [disabled]="accountForm.invalid || isSubmitting"
+            class="auth-page__submit"
+          >
+            @if (isSubmitting) {
+              <mat-progress-spinner
+                diameter="20"
+                mode="indeterminate"
+                color="accent"
+                style="margin-right: 0.5rem"
+              />
+            }
+            @if (!isSubmitting) {
+              <span>Register</span>
+            }
+            @if (isSubmitting) {
+              <span>Submitting…</span>
+            }
+          </button>
+
+          <a mat-stroked-button color="primary" routerLink="/login">Back to sign in</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

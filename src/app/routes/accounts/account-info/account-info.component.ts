@@ -1,5 +1,6 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { AccountsService } from '../../../services/accounts.service';
+import { SelectedAccountService } from '../../../services/selected-account.service';
 import { finalize, forkJoin, tap } from 'rxjs';
 import { Account } from '../../../models/account';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -19,6 +20,7 @@ export class AccountInfoComponent implements OnInit {
     private accountsService: AccountsService,
     private activatedRoute: ActivatedRoute,
     private router: Router,
+    private selectedAccount: SelectedAccountService,
   ) {}
 
   ngOnInit(): void {
@@ -59,6 +61,7 @@ export class AccountInfoComponent implements OnInit {
       this.accountsService.loadAccount(accountId).pipe(
         tap((account) => {
           this.account = account;
+          this.selectedAccount.setSelectedAccountId(account.id);
           this.onAccount.emit(account);
         }),
       ),

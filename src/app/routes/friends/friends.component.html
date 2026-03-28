@@ -1,0 +1,22 @@
+<div class="friends-page">
+  @if (loading) {
+    <div class="friends-page__state">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+  } @else if (!account) {
+    <div class="friends-page__state">
+      <p class="friends-page__hint">Select an account from Accounts first.</p>
+      <a routerLink="/" class="cr-btn cr-btn--primary">Go to Accounts</a>
+    </div>
+  } @else {
+    <div class="friends-page__inner">
+      <h1 class="friends-page__title">Friends</h1>
+      <div class="friends-page__card">
+        <app-account-friends
+          [account]="account"
+          (onFriends)="friends = $event"
+        ></app-account-friends>
+      </div>
+    </div>
+  }
+</div>

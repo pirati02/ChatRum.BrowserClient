@@ -1,23 +1,44 @@
-<div class="tab-list-footer-page">
-  <div class="header">Accounts</div>
-  <div class="artists-list d-flex full-width full-height flex-column">
-    <div class="d-flex flex-column full-width full-height">
-      <div class="d-flex flex-row" style="padding: 2rem">
-        <mat-select (selectionChange)="senderSelected($event)">
-          <mat-option *ngFor="let account of accounts" [value]="account">
-            {{ account.userName }}
-          </mat-option>
-        </mat-select>
-        <!--        <mat-select (selectionChange)="receiverSelected($event)">-->
-        <!--          <mat-option *ngFor="let account of accounts" [value]="account">-->
-        <!--            {{ account.userName }}-->
-        <!--          </mat-option>-->
-        <!--        </mat-select>-->
-      </div>
+<div class="accounts-page">
+  @if (showNeedAccountHint) {
+    <div class="accounts-banner" role="status">
+      Select an account below to use Feed and Friends.
+    </div>
+  }
 
-      <button class="card-btn" (click)="openAccountDetails(sender?.id!)">
+  <div class="accounts-page__inner">
+    <h1 class="accounts-page__title">Accounts</h1>
+
+    <div class="cr-card">
+      <label class="cr-label" for="account-select">Select account</label>
+      <mat-select
+        id="account-select"
+        class="cr-mat-select"
+        placeholder="Choose account"
+        (selectionChange)="senderSelected($event)"
+        [value]="sender"
+        [compareWith]="compareAccounts"
+      >
+        <mat-option *ngFor="let account of accounts" [value]="account">
+          {{ account.userName }}
+          <span class="accounts-option-email" *ngIf="account.email"
+            >({{ account.email }})</span
+          >
+        </mat-option>
+      </mat-select>
+
+      <button
+        type="button"
+        class="cr-btn cr-btn--primary cr-btn--block"
+        [disabled]="!sender"
+        (click)="sender && openAccountDetails(sender.id)"
+      >
         Go to details
+        <mat-icon>chevron_right</mat-icon>
       </button>
+
+      <a routerLink="/register" class="cr-btn cr-btn--outline cr-btn--block">
+        Create new account
+      </a>
     </div>
   </div>
 </div>

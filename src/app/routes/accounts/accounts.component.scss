@@ -1,0 +1,124 @@
+.accounts-page {
+  min-height: calc(100dvh - var(--shell-header-height));
+  padding: 1rem 1rem 5rem;
+
+  @media (min-width: 992px) {
+    padding: 1rem 1rem 1.5rem;
+  }
+}
+
+.accounts-banner {
+  max-width: 500px;
+  margin: 0 auto 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--post-text);
+  border: 1px solid var(--surface-glass-border);
+  font-size: 0.9rem;
+  box-shadow: var(--glass-shadow);
+}
+
+.accounts-page__inner {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.accounts-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--heading-on-gradient);
+  text-shadow: var(--heading-on-gradient-shadow);
+}
+
+.cr-card {
+  background: var(--frosted-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-glass-border);
+  box-shadow: var(--glass-shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cr-label {
+  display: block;
+  font-weight: 500;
+  color: var(--text-black);
+}
+
+.cr-mat-select {
+  width: 100%;
+  border: 2px solid var(--post-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.accounts-option-email {
+  color: var(--post-muted);
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
+}
+
+.cr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+  font-size: 1rem;
+  transition:
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  mat-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 1.25rem;
+  }
+}
+
+.cr-btn--block {
+  width: 100%;
+}
+
+.cr-btn--primary {
+  background: var(--gradient-brand);
+  color: var(--on-accent);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 4px 12px var(--accent-shadow);
+  }
+}
+
+.cr-btn--outline {
+  background: var(--surface-glass);
+  color: var(--accent-strong);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}

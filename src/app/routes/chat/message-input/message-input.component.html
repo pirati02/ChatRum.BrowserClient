@@ -5,6 +5,7 @@
       class="message-input"
       [(ngModel)]="messageContent"
       [placeholder]="displayPlaceholder"
+      (keydown.enter)="onEnterKey($event)"
     />
     <div class="attachment-btn-wrapper">
       <button class="send-btn attachment-btn" (click)="fileInput.click()">

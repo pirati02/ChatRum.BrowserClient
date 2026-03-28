@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
+import { AuthService } from '../core/auth/auth.service';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 import { HubConnectionState } from '@microsoft/signalr';
@@ -36,11 +37,20 @@ export class ChatService {
     @Inject('CHAT_BASE_URL') private baseUrl: string,
     @Inject('CHAT_SIGNALR_URL') private signalrUrl: string,
     private httpClient: HttpClient,
+    private auth: AuthService,
   ) {}
 
   startConnection(accountId: string) {
+    const token = this.auth.getAccessToken();
+    if (!token) {
+      console.warn('Chat SignalR: no access token; connection not started');
+      return;
+    }
+    const hubUrl = this.buildHubUrl(accountId);
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${this.signalrUrl}?accountId=${accountId}`)
+      .withUrl(hubUrl, {
+        accessTokenFactory: () => Promise.resolve(this.auth.getAccessToken() ?? ''),
+      })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build();
@@ -71,6 +81,15 @@ export class ChatService {
         this.updateMessageStateSubject.next({ messageId, status });
       },
     );
+  }
+
+  private buildHubUrl(accountId: string): string {
+    const token = this.auth.getAccessToken() ?? '';
+    const params = new URLSearchParams({ accountId });
+    if (token) {
+      params.set('access_token', token);
+    }
+    return `${this.signalrUrl}?${params.toString()}`;
   }
 
   stopConnection() {

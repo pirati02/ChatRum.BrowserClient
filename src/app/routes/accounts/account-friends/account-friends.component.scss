@@ -1,15 +1,57 @@
-.hover-shadow:hover {
-  background-color: #f8f9fa;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.list-group-item {
-  transition: background-color 0.2s;
-}
-
-.list-group-item:hover {
-  background-color: #f1f1f1;
+:host {
+  display: block;
 }
 
 .friend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--surface-glass-border);
+  border-radius: 0.75rem;
+  background: var(--frosted-white);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin-bottom: 0.75rem;
+}
+
+.friend h3 {
+  margin: 0;
+  flex: 1 1 120px;
+  font-size: 1rem;
+  color: var(--post-text);
+}
+
+.card {
+  max-width: none;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-glass-border);
+  background: var(--frosted-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--glass-shadow);
+  margin-bottom: 0.75rem;
+}
+
+.card-body {
+  padding: 1rem 1.25rem;
+}
+
+.card-title {
+  color: var(--post-text);
+}
+
+.card-btn {
+  background: var(--gradient-brand);
+  color: var(--on-accent);
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.card-btn:hover {
+  filter: brightness(1.05);
 }

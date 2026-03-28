@@ -1,69 +1,66 @@
-<div class="d-flex">
-  <div class="artists-list d-flex flex-column">
-    <div class="d-flex flex-row">
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>User name</span>
-        <span>{{ account?.userName }}</span>
+<div class="account-info" *ngIf="account">
+  <div class="cr-card cr-card--account-info">
+    <div class="account-info__grid">
+      <div class="account-info__field">
+        <span class="account-info__label">Username</span>
+        <span class="account-info__value">{{ account.userName }}</span>
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Email</span>
-        <span>{{ account?.email }}</span>
+      <div class="account-info__field">
+        <span class="account-info__label">Email</span>
+        <span class="account-info__value">{{ account.email }}</span>
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>First name</span>
-        <span>{{ account?.firstName }}</span>
+      <div class="account-info__field">
+        <span class="account-info__label">First name</span>
+        <span class="account-info__value">{{ account.firstName }}</span>
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Last name</span>
-        <span>{{ account?.lastName }}</span>
+      <div class="account-info__field">
+        <span class="account-info__label">Last name</span>
+        <span class="account-info__value">{{ account.lastName }}</span>
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Phone Number</span>
-        <span>{{ account?.phoneNumber }}</span>
+      <div class="account-info__field">
+        <span class="account-info__label">Phone</span>
+        <span class="account-info__value"
+          >{{ account.countryCode }} {{ account.phoneNumber }}</span
+        >
       </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Country Code</span>
-        <span>{{ account?.countryCode }}</span>
-      </div>
-      <div class="d-flex flex-column" style="padding: 1rem">
-        <span>Verified</span>
-        <span>{{ account?.isVerified ? "✅ Yes" : "❌ No" }}</span>
+      <div class="account-info__field">
+        <span class="account-info__label">Verified</span>
+        <span class="account-info__value">{{
+          account.isVerified ? "Yes" : "No"
+        }}</span>
       </div>
     </div>
 
-    <button mat-stroked-button color="accent" (click)="modifyAccount()">
-      Modify Account
+    <button
+      type="button"
+      mat-stroked-button
+      class="account-info__modify"
+      (click)="modifyAccount()"
+    >
+      Modify account
     </button>
   </div>
 
-  <!-- ✅ Verification Section -->
-  <div
-    class="verify-section card"
-    *ngIf="account?.isVerified === false"
-    style="margin-top: 2rem"
-  >
-    <div class="card-body">
-      <h3 class="card-title">Account Verification</h3>
-      <p class="card-text" style="opacity: 0.7">
-        We’ve sent a verification code to your phone number
-        <strong>{{ account?.countryCode }} {{ account?.phoneNumber }}</strong
-        >. Please enter it below to verify your account.
-      </p>
+  <div class="cr-card cr-card--verify" *ngIf="account.isVerified === false">
+    <h3 class="account-info__verify-title">Account verification</h3>
+    <p class="account-info__verify-text">
+      We sent a verification code to
+      <strong>{{ account.countryCode }} {{ account.phoneNumber }}</strong
+      >. Enter it below to verify your account.
+    </p>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Verification Code</mat-label>
-        <input matInput type="text" [(ngModel)]="verificationCode" />
-      </mat-form-field>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Verification code</mat-label>
+      <input matInput type="text" [(ngModel)]="verificationCode" />
+    </mat-form-field>
 
-      <div class="d-flex flex-row" style="gap: 1rem">
-        <button mat-flat-button color="primary" (click)="verifyAccount()">
-          Verify
-        </button>
-        <button mat-stroked-button color="accent" (click)="resendCode()">
-          Resend Code
-        </button>
-      </div>
+    <div class="account-info__verify-actions">
+      <button mat-flat-button color="primary" (click)="verifyAccount()">
+        Verify
+      </button>
+      <button mat-stroked-button color="accent" (click)="resendCode()">
+        Resend code
+      </button>
     </div>
   </div>
-  <!-- ✅ End Verification Section -->
 </div>

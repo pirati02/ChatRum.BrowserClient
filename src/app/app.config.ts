@@ -5,47 +5,67 @@ import {
   ValueProvider,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import {
+  provideHttpClient,
+  withFetch,
+  withInterceptors,
+  withJsonpSupport,
+} from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { AppModule } from './app.module';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { environment } from '../environments/environment';
+import { authInterceptor } from './core/auth/auth.interceptor';
+import { GATEWAY_URL } from './core/auth/gateway.token';
 
-const ocelotBaseUrl = 'http://localhost:5136';
+const base = environment.gatewayUrl.replace(/\/$/, '');
 
-export var chatBaseUrlProvider: ValueProvider = <ValueProvider>{
+export const chatBaseUrlProvider: ValueProvider = {
   provide: 'CHAT_BASE_URL',
-  useValue: `${ocelotBaseUrl}/chat`,
+  useValue: `${base}/chat`,
 };
 
-export var accountsBaseUrlProvider: ValueProvider = <ValueProvider>{
+export const accountsBaseUrlProvider: ValueProvider = {
   provide: 'ACCOUNTS_BASE_URL',
-  useValue: `${ocelotBaseUrl}/account`,
+  useValue: `${base}/account`,
 };
 
-export var friendshipBaseUrlProvider: ValueProvider = <ValueProvider>{
+export const friendshipBaseUrlProvider: ValueProvider = {
   provide: 'FRIENDSHIP_BASE_URL',
-  useValue: `${ocelotBaseUrl}/friendship`,
+  useValue: `${base}/friendship`,
 };
 
-export var feedBaseUrlProvider: ValueProvider = <ValueProvider>{
+export const feedBaseUrlProvider: ValueProvider = {
   provide: 'FEED_BASE_URL',
-  useValue: `${ocelotBaseUrl}/feed`,
+  useValue: `${base}/feed`,
 };
 
-export const chatSignalUrlProvider: ValueProvider = <ValueProvider>{
+export const chatSignalUrlProvider: ValueProvider = {
   provide: 'CHAT_SIGNALR_URL',
-  useValue: `${ocelotBaseUrl}/hub/chat`,
+  useValue: `${base}/hub/chat`,
 };
 
-export const friendshipSignalUrlProvider: ValueProvider = <ValueProvider>{
+export const friendshipSignalUrlProvider: ValueProvider = {
   provide: 'FRIENDSHIP_SIGNALR_URL',
-  useValue: `${ocelotBaseUrl}/hub/friendship`,
+  useValue: `${base}/hub/friendship`,
+};
+
+const gatewayUrlProvider: ValueProvider = {
+  provide: GATEWAY_URL,
+  useValue: base,
 };
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    provideHttpClient(
+      withFetch(),
+      withJsonpSupport(),
+      withInterceptors([authInterceptor]),
+    ),
+    gatewayUrlProvider,
     chatBaseUrlProvider,
     accountsBaseUrlProvider,
     chatSignalUrlProvider,

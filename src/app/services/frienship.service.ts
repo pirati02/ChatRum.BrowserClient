@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../core/auth/auth.service';
 import { PeerResponse } from '../models/peer.response';
 import { Peer } from '../models/peer';
 import { BehaviorSubject, map, Observable } from 'rxjs';
@@ -27,11 +28,20 @@ export class FriendshipService {
     @Inject('FRIENDSHIP_BASE_URL') private baseUrl: string,
     @Inject('FRIENDSHIP_SIGNALR_URL') private signalrUrl: string,
     private httpClient: HttpClient,
+    private auth: AuthService,
   ) {}
 
   startConnection(accountId: string) {
+    const token = this.auth.getAccessToken();
+    if (!token) {
+      console.warn('Friendship SignalR: no access token; connection not started');
+      return;
+    }
+    const hubUrl = this.buildHubUrl(accountId);
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${this.signalrUrl}?accountId=${accountId}`)
+      .withUrl(hubUrl, {
+        accessTokenFactory: () => Promise.resolve(this.auth.getAccessToken() ?? ''),
+      })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build();
@@ -54,6 +64,15 @@ export class FriendshipService {
         this.friendRequestAcceptedSubject.next({ fromPeerId, toPeerId });
       },
     );
+  }
+
+  private buildHubUrl(accountId: string): string {
+    const token = this.auth.getAccessToken() ?? '';
+    const params = new URLSearchParams({ accountId });
+    if (token) {
+      params.set('access_token', token);
+    }
+    return `${this.signalrUrl}?${params.toString()}`;
   }
 
   stopConnection() {
