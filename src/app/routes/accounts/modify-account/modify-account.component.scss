@@ -1,53 +1,76 @@
 .create-account-page {
+  min-height: calc(100dvh - var(--shell-header-height));
+  padding: 1rem 1rem 5rem;
+
+  @media (min-width: 992px) {
+    padding: 1rem 1rem 2rem;
+  }
+}
+
+.create-account-page__inner {
+  max-width: 520px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 2rem;
+  gap: 1.25rem;
+}
 
-  .header {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 2rem;
-    text-align: center;
-  }
+.create-account-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--heading-on-gradient);
+  text-shadow: var(--heading-on-gradient-shadow);
+}
 
-  .account-form {
+.cr-card {
+  background: var(--frosted-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--surface-glass-border);
+}
+
+.cr-card--form {
+  padding: 1.5rem;
+}
+
+.account-form {
+  width: 100%;
+
+  .full-width {
     width: 100%;
-    max-width: 500px;
-
-    .full-width {
-      width: 100%;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    .mat-error {
-      font-size: 0.85rem;
-    }
-
-    .d-flex {
-      display: flex;
-
-      &.flex-row {
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: center;
-      }
-
-      &.flex-column {
-        flex-direction: column;
-      }
-    }
   }
 
-  button {
-    min-width: 120px;
+  mat-form-field {
+    width: 100%;
+  }
 
-    mat-progress-spinner {
-      display: inline-block;
-      vertical-align: middle;
-    }
+  .mat-error {
+    font-size: 0.85rem;
+  }
+}
+
+.create-account-page__actions {
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.create-account-page__submit {
+  min-width: 120px;
+
+  mat-progress-spinner {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+::ng-deep {
+  .create-account-page .mat-mdc-raised-button.mat-primary,
+  .create-account-page .mat-mdc-button.mat-primary {
+    --mdc-filled-button-container-color: var(--accent-strong);
+    --mdc-filled-button-label-text-color: #fff;
   }
 }

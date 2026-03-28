@@ -1,51 +1,39 @@
-<div class="tab-list-footer-page">
-  <div class="header d-flex flex-row">
-    <span style="flex-grow: 1">Chat</span>
-    <mat-icon
-      *ngIf="encryptionEnabled"
-      class="encryption-indicator"
-      matTooltip="End-to-end encrypted"
-      style="color: #4caf50; margin-right: 8px"
-    >
-      lock
-    </mat-icon>
-    <mat-icon
-      *ngIf="encryptionError"
-      class="encryption-indicator"
-      [matTooltip]="encryptionError"
-      style="color: #ff9800; margin-right: 8px"
-    >
-      lock_open
-    </mat-icon>
-    <mat-icon
-      style="align-self: flex-end; cursor: pointer"
-      (click)="openChatDetails()"
-      >menu</mat-icon
-    >
-  </div>
-  <div class="artists-list d-flex full-width full-height flex-column">
-    <div class="d-flex flex-column full-width full-height">
-      <div
-        class="chat-container d-flex flex-column list-scroll-behavior"
-        #scrollElement
+<div class="chat-page">
+  <header class="chat-page__toolbar">
+    <span class="chat-page__title">Chat</span>
+    <span class="chat-page__toolbar-actions">
+      <button
+        type="button"
+        class="chat-page__icon-btn"
+        aria-label="Chat menu"
+        (click)="openChatDetails()"
       >
-        <div class="message-box" id="messageBox">
-          <ng-container *ngFor="let message of chat.messages">
-            <app-message-bubble
-              [message]="message"
-              [isSender]="message.sender.id === me?.id"
-              [participant]="getReceiver(message.sender.id)"
-              (retry)="retryMessage($event)"
-            >
-            </app-message-bubble>
-          </ng-container>
-        </div>
+        <mat-icon>menu</mat-icon>
+      </button>
+    </span>
+  </header>
+
+  <div class="chat-page__body">
+    <div
+      class="chat-page__scroll list-scroll-behavior"
+      #scrollElement
+    >
+      <div class="chat-page__messages" id="messageBox">
+        <ng-container *ngFor="let message of chat.messages">
+          <app-message-bubble
+            [message]="message"
+            [isSender]="message.sender.id === me?.id"
+            [participant]="getReceiver(message.sender.id)"
+            (retry)="retryMessage($event)"
+          >
+          </app-message-bubble>
+        </ng-container>
       </div>
-      <app-message-input
-        (sendMessage)="onSendMessage($event)"
-        (sendFile)="onSendFile($event)"
-      >
-      </app-message-input>
     </div>
+    <app-message-input
+      (sendMessage)="onSendMessage($event)"
+      (sendFile)="onSendFile($event)"
+    >
+    </app-message-input>
   </div>
 </div>

@@ -32,6 +32,15 @@ export class MessageInputComponent {
     }
   }
 
+  onEnterKey(event: Event) {
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.isComposing) {
+      return;
+    }
+    event.preventDefault();
+    this.onSend();
+  }
+
   onSend() {
     if (this.selectedFile) {
       this.sendFile.emit({ file: this.selectedFile });

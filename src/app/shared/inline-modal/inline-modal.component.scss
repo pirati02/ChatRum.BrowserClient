@@ -1,0 +1,30 @@
+:host {
+  display: block;
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.inline-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+.inline-modal__panel {
+  position: relative;
+  z-index: 201;
+  max-width: min(92vw, 22rem);
+  max-height: min(80dvh, 32rem);
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: var(--surface-elevated, #fff);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--surface-glass-border, rgba(0, 0, 0, 0.08));
+  pointer-events: auto;
+}

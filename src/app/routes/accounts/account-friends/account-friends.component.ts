@@ -2,9 +2,11 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnDestroy,
   OnInit,
   Output,
+  SimpleChanges,
 } from '@angular/core';
 import { AccountsService } from '../../../services/accounts.service';
 import { delay, finalize, forkJoin, Subscription, tap } from 'rxjs';
@@ -23,7 +25,9 @@ export interface PeerExtended extends PeerResponse {
   templateUrl: './account-friends.component.html',
   styleUrls: ['./account-friends.component.scss'],
 })
-export class AccountFriendsComponent implements OnInit, OnDestroy {
+export class AccountFriendsComponent
+  implements OnInit, OnDestroy, OnChanges
+{
   @Input() account?: Account;
   @Output() onFriends = new EventEmitter<PeerExtended[]>();
 
@@ -33,6 +37,8 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
   sentFriendRequests: PeerResponse[] = [];
 
   private subscriptions: Subscription[] = [];
+  /** Last account id we started SignalR / graph load for (route param or input). */
+  private activeAccountId: string | undefined;
 
   constructor(
     private accountsService: AccountsService,
@@ -42,19 +48,51 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.activatedRoute.params.subscribe((params) => {
-      const accountId = params['accountId'] as string;
-      this.loadAccountFriendsGraph(accountId);
+    const routeSub = this.activatedRoute.paramMap.subscribe(() =>
+      this.applyResolvedAccountId(),
+    );
+    this.subscriptions.push(routeSub);
 
-      this.friendshipService.startConnection(accountId);
-    });
-
+    this.applyResolvedAccountId();
     this.startListeners();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['account']) {
+      this.applyResolvedAccountId();
+    }
   }
 
   ngOnDestroy() {
     this.friendshipService.stopConnection();
+    this.activeAccountId = undefined;
     this.subscriptions.forEach((sub) => sub.unsubscribe());
+  }
+
+  /** Prefer route `account-details/:accountId`; otherwise `/friends` passes `[account]`. */
+  private resolveAccountId(): string | undefined {
+    const fromRoute = this.activatedRoute.snapshot.paramMap.get('accountId');
+    return fromRoute ?? this.account?.id;
+  }
+
+  private applyResolvedAccountId(): void {
+    const accountId = this.resolveAccountId();
+    if (!accountId) {
+      if (this.activeAccountId) {
+        this.friendshipService.stopConnection();
+        this.activeAccountId = undefined;
+      }
+      return;
+    }
+    if (accountId === this.activeAccountId) {
+      return;
+    }
+    if (this.activeAccountId) {
+      this.friendshipService.stopConnection();
+    }
+    this.activeAccountId = accountId;
+    this.loadAccountFriendsGraph(accountId);
+    this.friendshipService.startConnection(accountId);
   }
 
   private startListeners() {
@@ -88,7 +126,6 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
             .navigate(['chat'], {
               queryParams: {
                 receivers: JSON.stringify([receiver]),
-                me: JSON.stringify(this.account),
                 newChat: $event.checked,
                 isGroupChat: false,
               },
@@ -157,12 +194,14 @@ export class AccountFriendsComponent implements OnInit, OnDestroy {
             isVerified: true, //accepted friend requests are always verified
           },
       );
-    if (selectedFriends.length > 1) {
+    const receiversOnly = selectedFriends.filter(
+      (a) => a.id !== this.account?.id,
+    );
+    if (receiversOnly.length > 1) {
       this.router
         .navigate(['chat'], {
           queryParams: {
-            receivers: JSON.stringify(selectedFriends),
-            me: JSON.stringify(this.account),
+            receivers: JSON.stringify(receiversOnly),
             overrideExisting,
           },
         })

@@ -1,7 +1,11 @@
 .feed-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem 1rem;
+  min-height: calc(100dvh - var(--shell-header-height));
+  background: var(--app-page-gradient);
+  padding: 2rem 1rem 5rem;
+
+  @media (min-width: 992px) {
+    padding-bottom: 2rem;
+  }
 
   @media (min-width: 768px) {
     padding: 2rem 2rem;
@@ -41,21 +45,6 @@
   }
 }
 
-/* Account Section */
-.account-section {
-  margin-bottom: 2rem;
-
-  ::ng-deep app-account-info {
-    .card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      border: none;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-  }
-}
-
 /* Feed Content */
 .feed-content {
   max-width: 1400px;
@@ -75,7 +64,7 @@
 
   @media (min-width: 1200px) {
     position: sticky;
-    top: 2rem;
+    top: calc(var(--shell-header-height) + 0.5rem);
     margin-bottom: 0;
   }
 }
@@ -104,7 +93,7 @@
   h2 {
     font-size: 1.4rem;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--post-text);
     margin: 0;
   }
 
@@ -122,16 +111,16 @@
 
   .form-label {
     font-weight: 500;
-    color: #4a5568;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
     display: block;
     font-size: 0.95rem;
   }
 
   .form-control {
-    width: 100%;
+    width: 90%;
     padding: 0.75rem 1rem;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--post-border);
     border-radius: 12px;
     font-size: 1rem;
     transition: all 0.2s ease;
@@ -139,13 +128,13 @@
 
     &:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
       background: rgba(255, 255, 255, 0.95);
     }
 
     &::placeholder {
-      color: #a0aec0;
+      color: var(--text-placeholder);
     }
   }
 
@@ -155,7 +144,7 @@
   }
 
   .form-error {
-    color: #e53e3e;
+    color: var(--error-text);
     font-size: 0.875rem;
     margin-top: 0.5rem;
     font-weight: 500;
@@ -165,8 +154,8 @@
 .post-submit-btn {
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--gradient-brand);
+  color: var(--on-accent);
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -178,7 +167,7 @@
 
   &:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 8px 25px var(--accent-shadow);
   }
 
   &:disabled {
@@ -284,7 +273,7 @@
   .author-avatar {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--gradient-brand);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -300,13 +289,13 @@
     .author-name {
       font-size: 1rem;
       font-weight: 600;
-      color: #2d3748;
+      color: var(--post-text);
       margin: 0 0 0.25rem 0;
     }
 
     .post-time {
       font-size: 0.875rem;
-      color: #718096;
+      color: var(--post-muted);
       margin: 0;
     }
   }
@@ -318,13 +307,13 @@
   .post-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #2d3748;
+    color: var(--post-text);
     margin-bottom: 0.5rem;
     line-height: 1.4;
   }
 
   .post-description {
-    color: #4a5568;
+    color: var(--text-secondary);
     line-height: 1.6;
     margin: 0;
     white-space: pre-line;
@@ -335,28 +324,28 @@
   display: flex;
   gap: 0.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--post-border);
 }
 
 .post-action-btn {
   flex: 1;
   padding: 0.5rem 0.75rem;
   background: transparent;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--post-border);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #718096;
+  color: var(--post-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f7fafc;
-    border-color: #cbd5e0;
-    color: #4a5568;
+    background: var(--surface-muted);
+    border-color: var(--border-strong);
+    color: var(--text-secondary);
   }
 
   .action-icon {

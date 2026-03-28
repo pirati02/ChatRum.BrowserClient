@@ -61,7 +61,11 @@ export class ModifyAccountComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/']);
+    if (this.account?.id) {
+      void this.router.navigate(['/account-details', this.account.id]);
+    } else {
+      void this.router.navigate(['/']);
+    }
   }
 
   private loadAccountDetails(accountId: string) {

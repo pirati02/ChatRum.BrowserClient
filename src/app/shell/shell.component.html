@@ -1,0 +1,144 @@
+<div class="shell">
+  <header class="shell-header">
+    <div class="shell-header__left">
+      <button
+        type="button"
+        class="shell-icon-btn shell-header__menu-btn"
+        (click)="toggleMobileMenu()"
+        aria-label="Toggle menu"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <a
+        href="/"
+        class="shell-brand"
+        (click)="goBrand($event)"
+        >ChatRum</a
+      >
+    </div>
+
+    <nav class="shell-nav shell-nav--desktop" aria-label="Main">
+      <a
+        href="/feed"
+        class="shell-nav__link"
+        [class.is-active]="feedActive()"
+        (click)="goFeed($event)"
+      >
+        <mat-icon>forum</mat-icon>
+        <span>Feed</span>
+      </a>
+      <a
+        href="/chat"
+        class="shell-nav__link"
+        [class.is-active]="chatActive()"
+        (click)="goChat($event)"
+      >
+        <mat-icon>chat</mat-icon>
+        <span>Chat</span>
+      </a>
+      <a
+        href="/friends"
+        class="shell-nav__link"
+        [class.is-active]="friendsActive()"
+        (click)="goFriends($event)"
+      >
+        <mat-icon>group</mat-icon>
+        <span>Friends</span>
+      </a>
+    </nav>
+
+    <div class="shell-header__right">
+      <button
+        type="button"
+        mat-stroked-button
+        class="shell-header__logout"
+        (click)="logout()"
+      >
+        Log out
+      </button>
+      <div class="shell-header__account">
+        <button
+          type="button"
+          class="shell-header__avatar"
+          (click)="toggleAccountModal()"
+          [attr.aria-expanded]="accountModalOpen"
+          aria-haspopup="dialog"
+          aria-label="Account menu"
+        >
+          <mat-icon>person</mat-icon>
+        </button>
+        <app-inline-modal [(open)]="accountModalOpen">
+          <app-account-info [accountId]="selectedAccountId"></app-account-info>
+        </app-inline-modal>
+      </div>
+    </div>
+  </header>
+
+  @if (mobileMenuOpen) {
+    <div class="shell-mobile-menu">
+      <nav class="shell-mobile-menu__nav" aria-label="Mobile main">
+        <a
+          href="/feed"
+          class="shell-mobile-menu__link"
+          [class.is-active]="feedActive()"
+          (click)="goFeed($event)"
+        >
+          <mat-icon>forum</mat-icon>
+          <span>Feed</span>
+        </a>
+        <a
+          href="/chat"
+          class="shell-mobile-menu__link"
+          [class.is-active]="chatActive()"
+          (click)="goChat($event)"
+        >
+          <mat-icon>chat</mat-icon>
+          <span>Chat</span>
+        </a>
+        <a
+          href="/friends"
+          class="shell-mobile-menu__link"
+          [class.is-active]="friendsActive()"
+          (click)="goFriends($event)"
+        >
+          <mat-icon>group</mat-icon>
+          <span>Friends</span>
+        </a>
+      </nav>
+    </div>
+  }
+
+  <main class="shell-main">
+    <router-outlet />
+  </main>
+
+  <nav class="shell-bottom-nav" aria-label="Bottom">
+    <a
+      href="/feed"
+      class="shell-bottom-nav__item"
+      [class.is-active]="feedActive()"
+      (click)="goFeed($event)"
+    >
+      <mat-icon>forum</mat-icon>
+      <span>Feed</span>
+    </a>
+    <a
+      href="/chat"
+      class="shell-bottom-nav__item"
+      [class.is-active]="chatActive()"
+      (click)="goChat($event)"
+    >
+      <mat-icon>chat</mat-icon>
+      <span>Chat</span>
+    </a>
+    <a
+      href="/friends"
+      class="shell-bottom-nav__item"
+      [class.is-active]="friendsActive()"
+      (click)="goFriends($event)"
+    >
+      <mat-icon>group</mat-icon>
+      <span>Friends</span>
+    </a>
+  </nav>
+</div>

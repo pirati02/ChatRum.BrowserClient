@@ -5,6 +5,7 @@ import { PostDocumentResponse } from '../../models/post.response';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AccountsService } from '../../services/accounts.service';
+import { SelectedAccountService } from '../../services/selected-account.service';
 import { Account } from '../../models/account';
 
 @Component({
@@ -24,11 +25,13 @@ export class FeedComponent implements OnInit {
     private accountsService: AccountsService,
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
+    private selectedAccount: SelectedAccountService,
   ) {}
 
   ngOnInit(): void {
     this.activatedRoute.params.subscribe((params) => {
       const accountId = params['accountId'] as string;
+      this.selectedAccount.setSelectedAccountId(accountId);
       this.accountsService
         .loadAccount(accountId)
         .pipe(

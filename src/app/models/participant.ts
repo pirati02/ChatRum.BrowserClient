@@ -4,6 +4,4 @@ export interface Participant {
   lastName: string;
   nickName: string;
   isAdmin: boolean;
-  /** Base64 SPKI public key for E2E encryption */
-  publicKey?: string;
 }

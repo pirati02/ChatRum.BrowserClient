@@ -1,5 +1,6 @@
 @import "variables";
 @import "fonts";
+@import "chatrum-theme";
 
 //bpg_nino_mtavruli_bold
 #master_tab_layout ul li {
@@ -56,12 +57,12 @@ body {
 
 .header {
   user-select: none;
-  background-color: $skin;
+  background-color: var(--header-skin);
   padding: 10px;
   text-align: center;
   font-size: 1.2em;
   font-weight: bold;
-  color: #000;
+  color: var(--foreground);
 }
 
 .footer button {
@@ -83,7 +84,7 @@ body {
 }
 
 .border {
-  border: 1px solid #dee2e6 !important;
+  border: 1px solid var(--post-border) !important;
 }
 
 .rounded {
@@ -167,9 +168,12 @@ body {
 .card {
   max-width: 350px;
   border-radius: 16px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--glass-shadow);
   overflow: hidden;
-  background-color: #fff;
+  background-color: var(--frosted-white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--surface-glass-border);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
@@ -198,20 +202,23 @@ body {
 
 .card-text {
   font-size: 0.95rem;
-  color: #555;
+  color: var(--text-secondary);
   margin-bottom: 16px;
 }
 
 .card-btn {
-  background-color: #3f51b5;
-  color: white;
+  background: var(--gradient-brand);
+  color: var(--on-accent);
   border: none;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition:
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card-btn:hover {
-  background-color: #303f9f;
+  filter: brightness(1.05);
+  box-shadow: 0 4px 12px var(--accent-shadow);
 }

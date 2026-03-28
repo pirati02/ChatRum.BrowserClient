@@ -1,0 +1,15 @@
+@if (open) {
+  <div
+    class="inline-modal__backdrop"
+    (click)="onBackdropClick()"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="inline-modal__panel"
+    role="dialog"
+    aria-modal="true"
+    (click)="$event.stopPropagation()"
+  >
+    <ng-content />
+  </div>
+}
