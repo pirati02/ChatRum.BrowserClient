@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { ChatComponent } from './routes/chat/chat.component';
-import { AccountsComponent } from './routes/accounts/accounts.component';
+import { HomeRedirectComponent } from './routes/home-redirect/home-redirect.component';
 import { FeedComponent } from './routes/feed/feed.component';
 import { AccountComponent } from './routes/accounts/account-details/account.component';
 import { ModifyAccountComponent } from './routes/accounts/modify-account/modify-account.component';
@@ -19,9 +19,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
-        title: 'Accounts',
+        title: 'Home',
         path: '',
-        component: AccountsComponent,
+        component: HomeRedirectComponent,
         pathMatch: 'full',
       },
       {

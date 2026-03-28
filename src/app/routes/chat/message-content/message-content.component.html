@@ -1,4 +1,4 @@
-<ng-container [ngSwitch]="content.$type || content.type">
+<ng-container [ngSwitch]="displayKind">
   <ng-container *ngSwitchCase="'plain'">
     <span style="font-size: 1.2em">{{ content.content }}</span>
   </ng-container>
@@ -13,5 +13,10 @@
       style="max-width: 20rem; max-height: 20rem"
       [ngStyle]="{ 'align-self': alignStyle }"
     />
+  </ng-container>
+  <ng-container *ngSwitchDefault>
+    <span class="message-content__fallback" style="font-size: 1.2em"
+      >Unable to display this message.</span
+    >
   </ng-container>
 </ng-container>

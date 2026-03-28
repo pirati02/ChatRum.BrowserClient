@@ -80,3 +80,9 @@
 .full-width {
   width: 100%;
 }
+
+:host-context(.inline-modal__panel) {
+  .account-info__grid {
+    grid-template-columns: 1fr;
+  }
+}

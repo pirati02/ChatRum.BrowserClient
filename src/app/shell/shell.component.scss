@@ -109,15 +109,35 @@
   flex-shrink: 0;
 }
 
+.shell-header__account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .shell-header__avatar {
   width: 40px;
   height: 40px;
+  border: none;
+  padding: 0;
   border-radius: 50%;
   background: var(--gradient-brand);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   flex-shrink: 0;
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 
   mat-icon {
     color: var(--on-accent);

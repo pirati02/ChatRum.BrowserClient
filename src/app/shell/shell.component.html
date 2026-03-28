@@ -9,19 +9,15 @@
       >
         <mat-icon>menu</mat-icon>
       </button>
-      <a routerLink="/" class="shell-brand" (click)="closeMobileMenu()">ChatRum</a>
+      <a
+        href="/"
+        class="shell-brand"
+        (click)="goBrand($event)"
+        >ChatRum</a
+      >
     </div>
 
     <nav class="shell-nav shell-nav--desktop" aria-label="Main">
-      <a
-        routerLink="/"
-        routerLinkActive="is-active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="shell-nav__link"
-      >
-        <mat-icon>home</mat-icon>
-        <span>Accounts</span>
-      </a>
       <a
         href="/feed"
         class="shell-nav__link"
@@ -32,9 +28,10 @@
         <span>Feed</span>
       </a>
       <a
-        routerLink="/chat"
-        routerLinkActive="is-active"
+        href="/chat"
         class="shell-nav__link"
+        [class.is-active]="chatActive()"
+        (click)="goChat($event)"
       >
         <mat-icon>chat</mat-icon>
         <span>Chat</span>
@@ -59,8 +56,20 @@
       >
         Log out
       </button>
-      <div class="shell-header__avatar" aria-hidden="true">
-        <mat-icon>person</mat-icon>
+      <div class="shell-header__account">
+        <button
+          type="button"
+          class="shell-header__avatar"
+          (click)="toggleAccountModal()"
+          [attr.aria-expanded]="accountModalOpen"
+          aria-haspopup="dialog"
+          aria-label="Account menu"
+        >
+          <mat-icon>person</mat-icon>
+        </button>
+        <app-inline-modal [(open)]="accountModalOpen">
+          <app-account-info [accountId]="selectedAccountId"></app-account-info>
+        </app-inline-modal>
       </div>
     </div>
   </header>
@@ -68,16 +77,6 @@
   @if (mobileMenuOpen) {
     <div class="shell-mobile-menu">
       <nav class="shell-mobile-menu__nav" aria-label="Mobile main">
-        <a
-          routerLink="/"
-          routerLinkActive="is-active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="shell-mobile-menu__link"
-          (click)="closeMobileMenu()"
-        >
-          <mat-icon>home</mat-icon>
-          <span>Accounts</span>
-        </a>
         <a
           href="/feed"
           class="shell-mobile-menu__link"
@@ -88,10 +87,10 @@
           <span>Feed</span>
         </a>
         <a
-          routerLink="/chat"
-          routerLinkActive="is-active"
+          href="/chat"
           class="shell-mobile-menu__link"
-          (click)="closeMobileMenu()"
+          [class.is-active]="chatActive()"
+          (click)="goChat($event)"
         >
           <mat-icon>chat</mat-icon>
           <span>Chat</span>
@@ -115,15 +114,6 @@
 
   <nav class="shell-bottom-nav" aria-label="Bottom">
     <a
-      routerLink="/"
-      routerLinkActive="is-active"
-      [routerLinkActiveOptions]="{ exact: true }"
-      class="shell-bottom-nav__item"
-    >
-      <mat-icon>home</mat-icon>
-      <span>Home</span>
-    </a>
-    <a
       href="/feed"
       class="shell-bottom-nav__item"
       [class.is-active]="feedActive()"
@@ -132,7 +122,12 @@
       <mat-icon>forum</mat-icon>
       <span>Feed</span>
     </a>
-    <a routerLink="/chat" routerLinkActive="is-active" class="shell-bottom-nav__item">
+    <a
+      href="/chat"
+      class="shell-bottom-nav__item"
+      [class.is-active]="chatActive()"
+      (click)="goChat($event)"
+    >
       <mat-icon>chat</mat-icon>
       <span>Chat</span>
     </a>

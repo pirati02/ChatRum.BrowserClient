@@ -23,26 +23,41 @@ export class FriendsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const start = (accountId: string) => {
+      this.accountsService
+        .loadAccount(accountId)
+        .pipe(
+          finalize(() => {
+            this.loading = false;
+          }),
+        )
+        .subscribe({
+          next: (account) => {
+            this.account = account;
+          },
+          error: () => {
+            void this.router.navigate(['/']);
+          },
+        });
+    };
+
     const id = this.selectedAccount.getSelectedAccountId();
-    if (!id) {
-      this.loading = false;
-      void this.router.navigate(['/'], { queryParams: { needAccount: '1' } });
+    if (id) {
+      start(id);
       return;
     }
-    this.accountsService
-      .loadAccount(id)
-      .pipe(
-        finalize(() => {
+    this.accountsService.ensureDefaultAccountId(this.selectedAccount).subscribe({
+      next: (resolved) => {
+        if (!resolved) {
           this.loading = false;
-        }),
-      )
-      .subscribe({
-        next: (account) => {
-          this.account = account;
-        },
-        error: () => {
-          void this.router.navigate(['/']);
-        },
-      });
+          return;
+        }
+        start(resolved);
+      },
+      error: () => {
+        this.loading = false;
+        void this.router.navigate(['/']);
+      },
+    });
   }
 }

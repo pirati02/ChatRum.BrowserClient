@@ -8,7 +8,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { AccountsComponent } from './routes/accounts/accounts.component';
 import {
   MatError,
   MatFormField,
@@ -16,7 +15,6 @@ import {
   MatOption,
   MatSelect,
 } from '@angular/material/select';
-import { AccountInfoComponent } from './routes/accounts/account-info/account-info.component';
 import { MatInput } from '@angular/material/input';
 import { ChatDetailsComponent } from './routes/chat-details/chat-details.component';
 import {
@@ -37,8 +35,6 @@ import { FriendsComponent } from './routes/friends/friends.component';
 @NgModule({
   declarations: [
     ChatComponent,
-    AccountsComponent,
-    AccountInfoComponent,
     AccountComponent,
     AccountFriendsComponent,
     ModifyAccountComponent,

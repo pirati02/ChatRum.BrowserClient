@@ -1,19 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import {
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-  Router,
-  NavigationEnd,
-} from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
+import { AccountsService } from '../services/accounts.service';
 import { ChatService } from '../services/chat.service';
 import { FriendshipService } from '../services/frienship.service';
 import { SelectedAccountService } from '../services/selected-account.service';
+import { InlineModalComponent } from '../shared/inline-modal/inline-modal.component';
+import { AccountInfoComponent } from '../routes/accounts/account-info/account-info.component';
 
 @Component({
   selector: 'app-shell',
@@ -21,16 +18,17 @@ import { SelectedAccountService } from '../services/selected-account.service';
   imports: [
     CommonModule,
     RouterOutlet,
-    RouterLink,
-    RouterLinkActive,
     MatIconModule,
     MatButtonModule,
+    InlineModalComponent,
+    AccountInfoComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent implements OnInit, OnDestroy {
   mobileMenuOpen = false;
+  accountModalOpen = false;
   selectedAccountId: string | null = null;
   url = '';
   private sub?: Subscription;
@@ -38,6 +36,7 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   constructor(
     private selectedAccount: SelectedAccountService,
+    private accounts: AccountsService,
     private router: Router,
     private auth: AuthService,
     private chat: ChatService,
@@ -76,6 +75,10 @@ export class ShellComponent implements OnInit, OnDestroy {
     return this.url.startsWith('/friends');
   }
 
+  chatActive(): boolean {
+    return this.url.startsWith('/chat');
+  }
+
   toggleMobileMenu(): void {
     this.mobileMenuOpen = !this.mobileMenuOpen;
   }
@@ -84,25 +87,86 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.mobileMenuOpen = false;
   }
 
-  goFeed(event: Event): void {
-    event.preventDefault();
-    if (!this.selectedAccountId) {
-      void this.router.navigate(['/'], { queryParams: { needAccount: '1' } });
-      this.closeMobileMenu();
+  toggleAccountModal(): void {
+    if (this.accountModalOpen) {
+      this.accountModalOpen = false;
       return;
     }
-    void this.router.navigate(['/feed', this.selectedAccountId]);
+    const id = this.selectedAccountId;
+    if (id) {
+      this.accountModalOpen = true;
+      return;
+    }
+    this.accounts.ensureDefaultAccountId(this.selectedAccount).subscribe({
+      next: (aid) => {
+        if (aid) {
+          this.accountModalOpen = true;
+        }
+      },
+    });
+  }
+
+  goBrand(event: Event): void {
+    this.goFeed(event);
+  }
+
+  goFeed(event: Event): void {
+    event.preventDefault();
     this.closeMobileMenu();
+    const id = this.selectedAccountId;
+    if (id) {
+      void this.router.navigate(['/feed', id]);
+      return;
+    }
+    this.accounts.ensureDefaultAccountId(this.selectedAccount).subscribe({
+      next: (aid) => {
+        if (aid) {
+          void this.router.navigate(['/feed', aid]);
+        } else {
+          void this.router.navigate(['/']);
+        }
+      },
+      error: () => void this.router.navigate(['/']),
+    });
   }
 
   goFriends(event: Event): void {
     event.preventDefault();
-    if (!this.selectedAccountId) {
-      void this.router.navigate(['/'], { queryParams: { needAccount: '1' } });
-      this.closeMobileMenu();
+    this.closeMobileMenu();
+    const id = this.selectedAccountId;
+    if (id) {
+      void this.router.navigate(['/friends']);
       return;
     }
-    void this.router.navigate(['/friends']);
+    this.accounts.ensureDefaultAccountId(this.selectedAccount).subscribe({
+      next: (aid) => {
+        if (aid) {
+          void this.router.navigate(['/friends']);
+        } else {
+          void this.router.navigate(['/']);
+        }
+      },
+      error: () => void this.router.navigate(['/']),
+    });
+  }
+
+  goChat(event: Event): void {
+    event.preventDefault();
     this.closeMobileMenu();
+    const id = this.selectedAccountId;
+    if (id) {
+      void this.router.navigate(['/chat']);
+      return;
+    }
+    this.accounts.ensureDefaultAccountId(this.selectedAccount).subscribe({
+      next: (aid) => {
+        if (aid) {
+          void this.router.navigate(['/chat']);
+        } else {
+          void this.router.navigate(['/']);
+        }
+      },
+      error: () => void this.router.navigate(['/']),
+    });
   }
 }

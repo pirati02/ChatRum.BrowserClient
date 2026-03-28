@@ -2,20 +2,6 @@
   <header class="chat-page__toolbar">
     <span class="chat-page__title">Chat</span>
     <span class="chat-page__toolbar-actions">
-      <mat-icon
-        *ngIf="encryptionEnabled"
-        class="chat-page__encryption chat-page__encryption--ok"
-        matTooltip="End-to-end encrypted"
-      >
-        lock
-      </mat-icon>
-      <mat-icon
-        *ngIf="encryptionError"
-        class="chat-page__encryption chat-page__encryption--warn"
-        [matTooltip]="encryptionError"
-      >
-        lock_open
-      </mat-icon>
       <button
         type="button"
         class="chat-page__icon-btn"
