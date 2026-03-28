@@ -387,18 +387,32 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  private gatherChatInfo(): Observable<any> {
-    return this.activatedRoute.queryParams.pipe(
-      tap((params) => {
-        const receivers = JSON.parse(params['receivers']) as Account[];
-        const me = JSON.parse(params['me']) as Account;
-
+  /**
+   * Read route state once. Do not subscribe to `queryParams` without `take(1)`:
+   * repeated emissions would cancel the inner `switchMap` pipeline and abort `getChat`.
+   */
+  private gatherChatInfo(): Observable<void> {
+    return of(undefined).pipe(
+      tap(() => {
+        const params = this.activatedRoute.snapshot.queryParamMap;
+        const meJson = params.get('me');
+        if (!meJson) {
+          console.warn('Chat: missing required query param "me"');
+          return;
+        }
+        const me = JSON.parse(meJson) as Account;
         this.me = this.toParticipant(me);
-        this.startNewChat = params['newChat'] === 'true';
-        this.overrideExisting = params['overrideExisting'] === 'true';
+        this.startNewChat = params.get('newChat') === 'true';
+        this.overrideExisting = params.get('overrideExisting') === 'true';
+
+        const receiversJson = params.get('receivers');
+        const receivers: Account[] = receiversJson
+          ? (JSON.parse(receiversJson) as Account[])
+          : [];
+
         this.chat = {
           ...this.chat,
-          chatId: params['chatId'],
+          chatId: params.get('chatId'),
           participants: [
             ...this.chat.participants!,
             ...receivers.map((r) => this.toParticipant(r)),
@@ -572,30 +586,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const encryptedContent = message.content as EncryptedContent;
 
-    // Find sender's public key from participants list
     const sender = this.chat.participants?.find(
       (p) => p.id === message.sender.id,
     );
-    const senderPublicKey = sender?.publicKey;
-
-    if (!senderPublicKey) {
-      console.warn('Sender public key not found for:', message.sender.id);
-      console.warn(
-        'Available participants:',
-        this.chat.participants?.map((p) => ({
-          id: p.id,
-          hasKey: !!p.publicKey,
-        })),
-      );
-      return of({
-        ...message,
-        content: {
-          type: 'plain',
-          $type: 'plain',
-          content: '🔒 Encrypted message (sender key unavailable)',
-        } as PlainTextContent,
-      });
-    }
 
     const myEncryptedKey = encryptedContent.encryptedKeys[this.me!.id];
     if (!myEncryptedKey) {
@@ -610,35 +603,89 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    return this.cryptoService
-      .decryptMessage(
-        encryptedContent.content,
-        encryptedContent.iv,
-        myEncryptedKey,
-        senderPublicKey,
-        this.keyPair,
-      )
-      .pipe(
-        map((decryptedText) => ({
-          ...message,
-          content: {
-            type: 'plain',
-            $type: 'plain',
-            content: decryptedText,
-          } as PlainTextContent,
-        })),
-        catchError((error) => {
-          console.error('Failed to decrypt message:', error);
+    return this.resolveSenderPublicKey(message, sender).pipe(
+      switchMap((senderPublicKey) => {
+        if (!senderPublicKey) {
+          console.warn('Sender public key not found for:', message.sender.id);
+          console.warn(
+            'Available participants:',
+            this.chat.participants?.map((p) => ({
+              id: p.id,
+              hasKey: !!p.publicKey,
+            })),
+          );
           return of({
             ...message,
             content: {
               type: 'plain',
               $type: 'plain',
-              content: '🔒 Encrypted message (decryption failed)',
+              content: '🔒 Encrypted message (sender key unavailable)',
             } as PlainTextContent,
           });
+        }
+
+        return this.cryptoService
+          .decryptMessage(
+            encryptedContent.content,
+            encryptedContent.iv,
+            myEncryptedKey,
+            senderPublicKey,
+            this.keyPair!,
+          )
+          .pipe(
+            map((decryptedText) => ({
+              ...message,
+              content: {
+                type: 'plain',
+                $type: 'plain',
+                content: decryptedText,
+              } as PlainTextContent,
+            })),
+            catchError((error) => {
+              console.error('Failed to decrypt message:', error);
+              return of({
+                ...message,
+                content: {
+                  type: 'plain',
+                  $type: 'plain',
+                  content: '🔒 Encrypted message (decryption failed)',
+                } as PlainTextContent,
+              });
+            }),
+          );
+      }),
+    );
+  }
+
+  /**
+   * Participant list from chat APIs often omits publicKey; message.sender may
+   * include it, otherwise we load it from the accounts API and cache on the participant.
+   */
+  private resolveSenderPublicKey(
+    message: UiMessage,
+    participant: Participant | undefined,
+  ): Observable<string | null> {
+    if (participant?.publicKey) {
+      return of(participant.publicKey);
+    }
+    if (message.sender.publicKey) {
+      return of(message.sender.publicKey).pipe(
+        tap((key) => {
+          if (participant && key) {
+            participant.publicKey = key;
+          }
         }),
       );
+    }
+    return this.accountsService.getPublicKey(message.sender.id).pipe(
+      map((res) => res.publicKey ?? null),
+      tap((key) => {
+        if (participant && key) {
+          participant.publicKey = key;
+        }
+      }),
+      catchError(() => of(null)),
+    );
   }
 
   private handleMessageFailed(result: UiMessage | null) {
