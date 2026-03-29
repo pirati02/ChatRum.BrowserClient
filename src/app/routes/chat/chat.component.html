@@ -1,6 +1,18 @@
 <div class="chat-page">
   <header class="chat-page__toolbar">
-    <span class="chat-page__title">Chat</span>
+    <button
+      type="button"
+      class="chat-page__icon-btn"
+      [attr.aria-expanded]="conversationsDrawerOpen"
+      aria-controls="chat-conversations-drawer"
+      [attr.aria-label]="
+        conversationsDrawerOpen ? 'Close conversations' : 'Open conversations'
+      "
+      (click)="toggleConversationsDrawer()"
+    >
+      <mat-icon>forum</mat-icon>
+    </button>
+    <span class="chat-page__title">{{ getChatHeaderTitle() }}</span>
     <span class="chat-page__toolbar-actions">
       <button
         type="button"
@@ -13,27 +25,86 @@
     </span>
   </header>
 
-  <div class="chat-page__body">
-    <div
-      class="chat-page__scroll list-scroll-behavior"
-      #scrollElement
+  <div
+    class="chat-page__split"
+    [class.chat-page__split--drawer-open]="conversationsDrawerOpen"
+  >
+    <button
+      type="button"
+      class="chat-page__drawer-backdrop"
+      tabindex="-1"
+      aria-hidden="true"
+      (click)="closeConversationsDrawer()"
+    ></button>
+
+    <aside
+      id="chat-conversations-drawer"
+      class="chat-page__sidebar"
+      aria-label="Recent conversations"
+      [attr.aria-hidden]="!conversationsDrawerOpen"
     >
-      <div class="chat-page__messages" id="messageBox">
-        <ng-container *ngFor="let message of chat.messages">
-          <app-message-bubble
-            [message]="message"
-            [isSender]="message.sender.id === me?.id"
-            [participant]="getReceiver(message.sender.id)"
-            (retry)="retryMessage($event)"
-          >
-          </app-message-bubble>
+      <div class="chat-page__sidebar-header">
+        <span class="chat-page__sidebar-heading">Conversations</span>
+        <button
+          type="button"
+          class="chat-page__icon-btn"
+          aria-label="Close conversations"
+          (click)="closeConversationsDrawer()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="chat-page__sidebar-body">
+        <ng-container *ngIf="recentChats.length === 0">
+          <p class="chat-page__sidebar-empty">No recent conversations</p>
         </ng-container>
+        <ul class="chat-page__sidebar-list" *ngIf="recentChats.length > 0">
+          <li *ngFor="let c of recentChats">
+            <button
+              type="button"
+              class="chat-page__sidebar-row"
+              [class.chat-page__sidebar-row--active]="isActiveConversation(c)"
+              (click)="openRecentChat(c)"
+            >
+              <span class="chat-page__sidebar-row-title">{{
+                conversationTitle(c)
+              }}</span>
+              <span class="chat-page__sidebar-row-meta">{{
+                c.message.sender?.nickName
+              }}</span>
+              <span class="chat-page__sidebar-row-preview">{{
+                messagePreview(c)
+              }}</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <div class="chat-page__main">
+      <div class="chat-page__body">
+        <div
+          class="chat-page__scroll list-scroll-behavior"
+          #scrollElement
+        >
+          <div class="chat-page__messages" id="messageBox">
+            <ng-container *ngFor="let message of chat.messages">
+              <app-message-bubble
+                [message]="message"
+                [isSender]="message.sender.id === me?.id"
+                [participant]="getReceiver(message.sender.id)"
+                (retry)="retryMessage($event)"
+              >
+              </app-message-bubble>
+            </ng-container>
+          </div>
+        </div>
+        <app-message-input
+          (sendMessage)="onSendMessage($event)"
+          (sendFile)="onSendFile($event)"
+        >
+        </app-message-input>
       </div>
     </div>
-    <app-message-input
-      (sendMessage)="onSendMessage($event)"
-      (sendFile)="onSendFile($event)"
-    >
-    </app-message-input>
   </div>
 </div>

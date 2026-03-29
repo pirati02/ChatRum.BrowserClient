@@ -106,7 +106,7 @@
                   <h4 class="author-name">
                     {{ post.creator.firstName }} {{ post.creator.lastName }}
                   </h4>
-                  <p class="post-time">Just now</p>
+                  <p class="post-time">{{ formatPostTime(post.creationDate) }}</p>
                 </div>
               </div>
 

@@ -100,6 +100,51 @@ export class FeedComponent implements OnInit {
   }
 
   /**
+   * Friendly relative time for feed timestamps (uses creationDate from API).
+   */
+  formatPostTime(isoString: string | undefined): string {
+    if (!isoString) {
+      return '';
+    }
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    let diffMs = Date.now() - date.getTime();
+    if (diffMs < 0) {
+      diffMs = 0;
+    }
+    const diffSec = Math.floor(diffMs / 1000);
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+
+    if (diffSec < 45) {
+      return 'Just now';
+    }
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) {
+      return rtf.format(-diffMin, 'minute');
+    }
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) {
+      return rtf.format(-diffHour, 'hour');
+    }
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) {
+      return rtf.format(-diffDay, 'day');
+    }
+
+    const dateOpts: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+    };
+    if (date.getFullYear() !== new Date().getFullYear()) {
+      dateOpts.year = 'numeric';
+    }
+    return new Intl.DateTimeFormat(undefined, dateOpts).format(date);
+  }
+
+  /**
    * Generate initials from first and last name
    */
   getAuthorInitials(firstName: string, lastName: string): string {

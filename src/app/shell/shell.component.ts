@@ -29,9 +29,8 @@ import { AccountInfoComponent } from '../routes/accounts/account-info/account-in
 export class ShellComponent implements OnInit, OnDestroy {
   mobileMenuOpen = false;
   accountModalOpen = false;
-  selectedAccountId: string | null = null;
+  loggedInAccountId: string | null = null;
   url = '';
-  private sub?: Subscription;
   private routerSub?: Subscription;
 
   constructor(
@@ -44,10 +43,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.loggedInAccountId = this.auth.getJwtClaims()?.sub ?? null;
     this.url = this.router.url;
-    this.sub = this.selectedAccount.selectedAccountId().subscribe((id) => {
-      this.selectedAccountId = id;
-    });
+    
     this.routerSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
@@ -56,7 +54,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
     this.routerSub?.unsubscribe();
   }
 
@@ -92,7 +89,7 @@ export class ShellComponent implements OnInit, OnDestroy {
       this.accountModalOpen = false;
       return;
     }
-    const id = this.selectedAccountId;
+    const id = this.loggedInAccountId;
     if (id) {
       this.accountModalOpen = true;
       return;
@@ -113,7 +110,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   goFeed(event: Event): void {
     event.preventDefault();
     this.closeMobileMenu();
-    const id = this.selectedAccountId;
+    const id = this.loggedInAccountId;
     if (id) {
       void this.router.navigate(['/feed', id]);
       return;
@@ -133,7 +130,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   goFriends(event: Event): void {
     event.preventDefault();
     this.closeMobileMenu();
-    const id = this.selectedAccountId;
+    const id = this.loggedInAccountId;
     if (id) {
       void this.router.navigate(['/friends']);
       return;
@@ -153,7 +150,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   goChat(event: Event): void {
     event.preventDefault();
     this.closeMobileMenu();
-    const id = this.selectedAccountId;
+    const id = this.loggedInAccountId;
     if (id) {
       void this.router.navigate(['/chat']);
       return;

@@ -16,7 +16,10 @@ import {
   mergeMap,
   Observable,
   of,
+  skip,
+  Subject,
   Subscription,
+  takeUntil,
   tap,
   switchMap,
   map,
@@ -44,6 +47,8 @@ import {
 } from './message-input/message-input.component';
 import { AccountsService } from '../../services/accounts.service';
 import { SelectedAccountService } from '../../services/selected-account.service';
+import { LastChatResponse } from '../../models/last-chat.response';
+import { LastestMessage } from '../../models/latest-message.response';
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | '';
 
@@ -75,9 +80,14 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   me?: Participant;
+  recentChats: LastChatResponse[] = [];
+  /** Slide-out panel for recent conversations; list still loads when closed. */
+  conversationsDrawerOpen = false;
   overrideExisting: boolean = false;
   private subscriptions: Subscription[] = [];
   private startNewChat: boolean = false;
+  private meAccount?: Account;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -95,46 +105,26 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(
         tap(() => {
           this.chatService.startConnection(this.me?.id!);
+          this.loadRecentConversations();
         }),
         delay(1000),
-        mergeMap(() => {
-          if (this.overrideExisting) {
-            return of();
-          }
-
-          if (this.chat.chatId) {
-            return this.chatService
-              .getChat(this.chat.chatId)
-              .pipe(switchMap((res) => this.initializeChat(res)));
-          }
-
-          if (this.startNewChat) {
-            this.startChatInternal().subscribe(() => this.scrollToBottom());
-            return of(null);
-          }
-
-          return this.chatService.findChat(this.chat?.participants!).pipe(
-            switchMap((res) => this.initializeChat(res)),
-            catchError((err) => {
-              let apiErrors: ApiError[] = [];
-
-              if (err.error) {
-                apiErrors = Array.isArray(err.error) ? err.error : [err.error];
-              }
-
-              const convNotFound = apiErrors.find(
-                (e) => e.type === ErrorType.NotFound,
-              );
-              if (convNotFound) {
-                this.startChatInternal().subscribe(() => this.scrollToBottom());
-              }
-
-              return of(null);
-            }),
-          );
-        }),
+        mergeMap(() => this.loadChatContent()),
       )
       .subscribe();
+
+    this.activatedRoute.queryParamMap
+      .pipe(skip(1), takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.meAccount) {
+          return;
+        }
+        this.resetChatStateForRouteChange();
+        this.bootstrapChatFromMeAccount(
+          this.meAccount,
+          this.activatedRoute.snapshot.queryParamMap,
+        );
+        this.loadChatContent().subscribe(() => this.scrollToBottom());
+      });
 
     this.startListeners();
   }
@@ -144,6 +134,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.chatService.stopConnection();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
@@ -222,6 +214,143 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getReceiver(id: string): Participant | undefined {
     return this.chat?.participants?.find((p) => p.id === id);
+  }
+
+  getChatHeaderTitle(): string {
+    const others =
+      this.chat.participants?.filter((p) => p.id !== this.me?.id) ?? [];
+    if (others.length === 0) {
+      return 'Select a friend';
+    }
+    if (others.length === 1) {
+      return others[0].nickName;
+    }
+    return others.map((p) => p.nickName).join(', ');
+  }
+
+  conversationTitle(chat: LastChatResponse): string {
+    const others =
+      chat.participants?.filter((p) => p.id !== this.me?.id) ?? [];
+    if (others.length === 0) {
+      return 'Chat';
+    }
+    if (others.length === 1) {
+      return others[0].nickName;
+    }
+    return others.map((p) => p.nickName).join(', ');
+  }
+
+  messagePreview(chat: LastChatResponse): string {
+    const content = chat.message?.content;
+    if (!content) {
+      return '';
+    }
+    if (content.type === 'image') {
+      return 'Image';
+    }
+    return content.content ?? '';
+  }
+
+  isActiveConversation(chat: LastChatResponse): boolean {
+    return (
+      !!this.chat.chatId && this.chat.chatId === chat.chatId
+    );
+  }
+
+  toggleConversationsDrawer(): void {
+    this.conversationsDrawerOpen = !this.conversationsDrawerOpen;
+  }
+
+  closeConversationsDrawer(): void {
+    this.conversationsDrawerOpen = false;
+  }
+
+  openRecentChat(chat: LastChatResponse): void {
+    const selectedFriends = chat.participants
+      .filter((p) => p.id !== this.me?.id)
+      .map(
+        (friend) =>
+          <Account>{
+            id: friend.id,
+            firstName: friend.firstName,
+            lastName: friend.lastName,
+            userName: friend.nickName,
+            isVerified: true,
+          },
+      );
+
+    this.closeConversationsDrawer();
+
+    void this.router.navigate(['chat'], {
+      queryParams: {
+        chatId: chat.chatId,
+        receivers: JSON.stringify(selectedFriends),
+      },
+    });
+  }
+
+  private loadRecentConversations(): void {
+    if (!this.me?.id) {
+      return;
+    }
+    this.chatService
+      .findTop10Conversation(this.me.id)
+      .pipe(
+        catchError((err) => {
+          console.warn('Recent conversations failed to load', err);
+          return of([] as LastChatResponse[]);
+        }),
+      )
+      .subscribe((chats) => {
+        this.recentChats = chats.filter((c) => !!c.message);
+      });
+  }
+
+  private resetChatStateForRouteChange(): void {
+    this.chat = {
+      chatId: null,
+      messages: [],
+      participants: [],
+      creator: null,
+      createdDate: null,
+    };
+  }
+
+  private loadChatContent(): Observable<unknown> {
+    if (this.overrideExisting) {
+      return of(null);
+    }
+
+    if (this.chat.chatId) {
+      return this.chatService
+        .getChat(this.chat.chatId)
+        .pipe(switchMap((res) => this.initializeChat(res)));
+    }
+
+    if (this.startNewChat) {
+      this.overrideExisting = this.startNewChat;
+      return this.startChatInternal().pipe(tap(() => this.scrollToBottom()));
+    }
+
+    return this.chatService.findChat(this.chat?.participants!).pipe(
+      switchMap((res) => this.initializeChat(res)),
+      catchError((err) => {
+        let apiErrors: ApiError[] = [];
+
+        if (err.error) {
+          apiErrors = Array.isArray(err.error) ? err.error : [err.error];
+        }
+
+        const convNotFound = apiErrors.find(
+          (e) => e.type === ErrorType.NotFound,
+        );
+        if (convNotFound) {
+          this.startChatInternal().subscribe(() => this.scrollToBottom());
+        }
+
+        return of(null);
+      }),
+    );
   }
 
   private initializeChat(res: ChatResponse): Observable<void> {
@@ -314,6 +443,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private bootstrapChatFromMeAccount(meAccount: Account, params: ParamMap): void {
+    this.meAccount = meAccount;
     this.me = this.toParticipant(meAccount);
     this.startNewChat = params.get('newChat') === 'true';
     this.overrideExisting = params.get('overrideExisting') === 'true';
@@ -410,6 +540,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const uiMessage = this.toUiMessage(result.message);
     this.chat.messages.push(uiMessage);
+    this.updateRecentChatPreview(uiMessage);
 
     if (result.update) {
       this.chatService.updateMessageStatus(
@@ -438,6 +569,19 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       });
       this.scrollToBottom();
     }
+  }
+
+  private updateRecentChatPreview(message: UiMessage): void {
+    const row = this.recentChats.find((c) => c.chatId === message.chatId);
+    if (!row) {
+      return;
+    }
+    row.message = <LastestMessage>{
+      content: message.content,
+      sender: message.sender,
+      chatId: message.chatId,
+      messageId: message.messageId,
+    };
   }
 
   private scrollToBottom(): void {

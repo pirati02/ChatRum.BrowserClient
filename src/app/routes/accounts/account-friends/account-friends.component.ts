@@ -127,7 +127,7 @@ export class AccountFriendsComponent
               queryParams: {
                 receivers: JSON.stringify([receiver]),
                 newChat: $event.checked,
-                isGroupChat: false,
+                isGroupChat: false
               },
             })
             .then();
