@@ -3,6 +3,11 @@
   [class.message-box-mine]="isSender"
   [class.message-box-others]="!isSender"
   [class.message-box-failed]="message.statusString === 'failed'"
+  (contextmenu)="onBubbleContextMenu($event)"
+  (touchstart)="onBubbleTouchStart()"
+  (touchend)="onBubbleTouchEnd()"
+  (touchcancel)="onBubbleTouchCancel()"
+  (touchmove)="onBubbleTouchMove()"
 >
   <span class="sender-name">{{ displayName }}</span>
 
@@ -22,7 +27,10 @@
     </button>
   </div>
 
-  <div class="reaction-actions">
+  <div
+    class="reaction-actions"
+    [class.reaction-actions--visible]="showReactionActions"
+  >
     <button
       type="button"
       class="reaction-btn"

@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnDestroy,
+  Output,
+} from '@angular/core';
 import { Participant } from '../../../models/participant';
 import { UiMessage } from '../chat.component';
 import {
@@ -11,7 +19,7 @@ import {
   templateUrl: './message-bubble.component.html',
   styleUrls: ['./message-bubble.component.scss'],
 })
-export class MessageBubbleComponent {
+export class MessageBubbleComponent implements OnDestroy {
   @Input() message!: UiMessage;
   @Input() isSender: boolean = false;
   @Input() participant?: Participant;
@@ -22,6 +30,12 @@ export class MessageBubbleComponent {
     message: UiMessage;
     emoji: MessageReactionEmoji;
   }>();
+  showReactionActions = false;
+
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly longPressDelayMs = 500;
+
+  constructor(private readonly elementRef: ElementRef<HTMLElement>) {}
 
   onRetry() {
     this.retry.emit(this.message);
@@ -68,5 +82,95 @@ export class MessageBubbleComponent {
 
   onToggleReaction(emoji: MessageReactionEmoji) {
     this.toggleReaction.emit({ message: this.message, emoji });
+    this.hideReactionActions();
+  }
+
+  onBubbleContextMenu(event: MouseEvent) {
+    event.preventDefault();
+
+    if (this.isSmallDevice) {
+      return;
+    }
+
+    this.showReactionActions = !this.showReactionActions;
+  }
+
+  onBubbleTouchStart() {
+    if (!this.isSmallDevice) {
+      return;
+    }
+
+    this.clearLongPressTimer();
+    this.longPressTimer = setTimeout(() => {
+      this.showReactionActions = !this.showReactionActions;
+      this.longPressTimer = null;
+    }, this.longPressDelayMs);
+  }
+
+  onBubbleTouchEnd() {
+    this.clearLongPressTimer();
+  }
+
+  onBubbleTouchCancel() {
+    this.clearLongPressTimer();
+  }
+
+  onBubbleTouchMove() {
+    this.clearLongPressTimer();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    this.hideIfOutside(event.target);
+  }
+
+  @HostListener('document:touchstart', ['$event'])
+  onDocumentTouchStart(event: TouchEvent) {
+    this.hideIfOutside(event.target);
+  }
+
+  @HostListener('document:contextmenu', ['$event'])
+  onDocumentContextMenu(event: MouseEvent) {
+    this.hideIfOutside(event.target);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapePressed() {
+    this.hideReactionActions();
+  }
+
+  ngOnDestroy() {
+    this.clearLongPressTimer();
+  }
+
+  private get isSmallDevice(): boolean {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    return window.matchMedia('(max-width: 768px), (pointer: coarse)').matches;
+  }
+
+  private clearLongPressTimer() {
+    if (!this.longPressTimer) {
+      return;
+    }
+
+    clearTimeout(this.longPressTimer);
+    this.longPressTimer = null;
+  }
+
+  private hideIfOutside(target: EventTarget | null) {
+    if (!(target instanceof Node)) {
+      return;
+    }
+
+    if (!this.elementRef.nativeElement.contains(target)) {
+      this.hideReactionActions();
+    }
+  }
+
+  private hideReactionActions() {
+    this.showReactionActions = false;
   }
 }

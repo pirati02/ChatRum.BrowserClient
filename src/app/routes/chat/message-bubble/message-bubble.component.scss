@@ -85,8 +85,7 @@
   padding: 0.15rem 0.35rem;
 }
 
-.message-bubble:hover .reaction-actions,
-.message-bubble:focus-within .reaction-actions {
+.reaction-actions--visible {
   opacity: 1;
   max-height: 4rem;
   pointer-events: auto;
