@@ -3,10 +3,12 @@ import { FeedService } from '../../services/feed.service';
 import { finalize, tap } from 'rxjs';
 import { PostDocumentResponse } from '../../models/post.response';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AccountsService } from '../../services/accounts.service';
 import { SelectedAccountService } from '../../services/selected-account.service';
 import { Account } from '../../models/account';
+import { Participant } from '../../models/participant';
+import { Reaction } from '../../models/post.response';
 
 @Component({
   selector: 'app-feed',
@@ -26,6 +28,7 @@ export class FeedComponent implements OnInit {
     private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private selectedAccount: SelectedAccountService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +100,35 @@ export class FeedComponent implements OnInit {
         next: () => console.log('Post created successfully'),
         error: (err) => console.error('Failed to create post', err),
       });
+  }
+
+  reactToPost(post: PostDocumentResponse): void {
+    const actor = this.getCurrentParticipant();
+    if (!actor) {
+      return;
+    }
+
+    const previousReactions = [...post.reactions];
+    post.reactions = this.toggleReaction(post.reactions, actor, 0);
+
+    this.feedService
+      .togglePostReaction(post.id, {
+        actor,
+        reactionType: 0,
+      })
+      .subscribe({
+        error: () => {
+          post.reactions = previousReactions;
+        },
+      });
+  }
+
+  openPostDetails(post: PostDocumentResponse): void {
+    if (!this.account?.id) {
+      return;
+    }
+
+    this.router.navigate(['/feed', this.account.id, 'post', post.id]);
   }
 
   /**
@@ -179,5 +211,38 @@ export class FeedComponent implements OnInit {
         }
       }, 500);
     }
+  }
+
+  private getCurrentParticipant(): Participant | null {
+    if (!this.account) {
+      return null;
+    }
+
+    return {
+      id: this.account.id,
+      firstName: this.account.firstName,
+      lastName: this.account.lastName,
+      nickName: this.account.userName,
+      isAdmin: false,
+    };
+  }
+
+  private toggleReaction(
+    reactions: Reaction[],
+    actor: Participant,
+    reactionType: number,
+  ): Reaction[] {
+    const existing = reactions.find((reaction) => reaction.actor.id === actor.id);
+    if (!existing) {
+      return [...reactions, { actor, reactionType }];
+    }
+
+    if (existing.reactionType === reactionType) {
+      return reactions.filter((reaction) => reaction.actor.id !== actor.id);
+    }
+
+    return reactions.map((reaction) =>
+      reaction.actor.id === actor.id ? { ...reaction, reactionType } : reaction,
+    );
   }
 }

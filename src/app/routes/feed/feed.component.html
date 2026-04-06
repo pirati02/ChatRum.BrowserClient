@@ -116,11 +116,11 @@
               </div>
 
               <div class="post-footer">
-                <button class="post-action-btn">
+                <button class="post-action-btn" (click)="reactToPost(post)">
                   <span class="action-icon">👍</span>
-                  <span>Like</span>
+                  <span>Like ({{ post.reactions.length }})</span>
                 </button>
-                <button class="post-action-btn">
+                <button class="post-action-btn" (click)="openPostDetails(post)">
                   <span class="action-icon">💬</span>
                   <span>Comment</span>
                 </button>

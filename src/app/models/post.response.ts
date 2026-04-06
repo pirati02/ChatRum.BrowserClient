@@ -23,7 +23,8 @@ export type ReactionType =
   | 'Wow'
   | 'Sad'
   | 'Angry'
-  | 'Care';
+  | 'Care'
+  | number;
 
 export interface Share {
   actor: Participant;
