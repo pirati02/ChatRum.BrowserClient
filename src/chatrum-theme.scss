@@ -60,11 +60,14 @@
   /* Legacy name — maps to Feed purple, not brown */
   --chocolate-brown: var(--accent-strong);
 
-  /* Chat — light veil over global gradient */
-  --chat-bg: rgba(255, 255, 255, 0.22);
-  --chat-border: rgba(255, 255, 255, 0.35);
-  --my-bubble: rgba(var(--accent-rgb), 0.14);
-  --other-bubble: #edf2f7;
+  /* Chat — increased contrast for message readability */
+  --chat-bg: rgba(255, 255, 255, 0.44);
+  --chat-border: rgba(255, 255, 255, 0.58);
+  --my-bubble: rgba(255, 255, 255, 0.92);
+  --my-bubble-text: #1f2a44;
+  --other-bubble: rgba(255, 255, 255, 0.8);
+  --other-bubble-text: #1f2937;
+  --bubble-meta-text: #4b5563;
   --send-button: var(--accent);
   --send-button-hover: var(--accent-hover);
 

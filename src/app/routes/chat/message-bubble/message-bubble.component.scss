@@ -1,17 +1,22 @@
 .message-bubble {
-  margin: 1.5rem;
+  margin: 1rem 0.75rem;
   border-radius: 1rem;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 14px rgba(31, 41, 55, 0.08);
+  line-height: 1.45;
 }
 
 .message-box-mine {
   text-align: right;
   background: var(--my-bubble);
+  color: var(--my-bubble-text);
 }
 
 .message-box-others {
   text-align: left;
   background: var(--other-bubble);
+  color: var(--other-bubble-text);
 }
 
 .message-box-failed {
@@ -20,8 +25,10 @@
 }
 
 .sender-name {
-  font-size: 0.6em;
-  margin-bottom: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--bubble-meta-text);
+  margin-bottom: 0.625rem;
 }
 
 .status-row {
@@ -33,7 +40,8 @@
 }
 
 .status-text {
-  font-size: 0.8em;
+  font-size: 0.75rem;
+  color: var(--bubble-meta-text);
 }
 
 .status-failed {
