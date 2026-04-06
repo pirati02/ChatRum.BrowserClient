@@ -9,6 +9,7 @@ import { FriendsComponent } from './routes/friends/friends.component';
 import { authGuard } from './core/auth/auth.guard';
 import { LoginComponent } from './routes/auth/login/login.component';
 import { RegisterComponent } from './routes/auth/register/register.component';
+import { PostDetailsComponent } from './routes/feed/post-details/post-details.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, title: 'Sign in' },
@@ -33,6 +34,11 @@ export const routes: Routes = [
         title: 'Feed',
         path: 'feed/:accountId',
         component: FeedComponent,
+      },
+      {
+        title: 'Post Details',
+        path: 'feed/:accountId/post/:postId',
+        component: PostDetailsComponent,
       },
       {
         title: 'Modify Account',

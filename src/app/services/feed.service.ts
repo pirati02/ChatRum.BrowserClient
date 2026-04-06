@@ -2,6 +2,11 @@ import { Inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PostDocumentResponse } from '../models/post.response';
 import { CreatePostRequest } from '../models/post.request';
+import {
+  AddCommentRequest,
+  PostDetailsResponse,
+  ToggleReactionRequest,
+} from '../models/post-details.response';
 
 @Injectable({
   providedIn: 'root',
@@ -25,5 +30,36 @@ export class FeedService {
 
   createPost(post: CreatePostRequest) {
     return this.httpClient.post<string>(this.baseUrl, post);
+  }
+
+  getPostDetails(postId: string) {
+    return this.httpClient.get<PostDetailsResponse>(
+      this.baseUrl + `/${postId}/details`,
+    );
+  }
+
+  togglePostReaction(postId: string, payload: ToggleReactionRequest) {
+    return this.httpClient.put<void>(this.baseUrl + `/${postId}/reactions`, payload);
+  }
+
+  addComment(postId: string, payload: AddCommentRequest) {
+    return this.httpClient.post<string>(
+      this.baseUrl + `/${postId}/comments`,
+      payload,
+    );
+  }
+
+  addReply(postId: string, commentId: string, payload: AddCommentRequest) {
+    return this.httpClient.post<string>(
+      this.baseUrl + `/${postId}/comments/${commentId}/replies`,
+      payload,
+    );
+  }
+
+  toggleCommentReaction(commentId: string, payload: ToggleReactionRequest) {
+    return this.httpClient.put<void>(
+      this.baseUrl + `/comments/${commentId}/reactions`,
+      payload,
+    );
   }
 }

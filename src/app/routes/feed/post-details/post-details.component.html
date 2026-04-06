@@ -1,0 +1,68 @@
+<div class="post-details-container" *ngIf="!loading && details; else loadingTemplate">
+  <section class="post-card">
+    <h1 class="title">{{ details.post.title }}</h1>
+    <p class="meta">
+      {{ details.post.creator.firstName }} {{ details.post.creator.lastName }} ·
+      {{ formatDate(details.post.creationDate) }}
+    </p>
+    <p class="description">{{ details.post.description }}</p>
+  </section>
+
+  <section class="comment-create">
+    <h2>Comments</h2>
+    <form [formGroup]="commentForm" (ngSubmit)="submitComment()">
+      <textarea
+        formControlName="content"
+        rows="3"
+        placeholder="Write a comment..."
+      ></textarea>
+      <button type="submit" [disabled]="submitting || commentForm.invalid">
+        Add comment
+      </button>
+    </form>
+  </section>
+
+  <section class="comment-list">
+    <article class="comment-card" *ngFor="let thread of details.comments">
+      <div class="comment-header">
+        <strong>{{ thread.comment.creator.firstName }} {{ thread.comment.creator.lastName }}</strong>
+        <span>{{ formatDate(thread.comment.creationDate) }}</span>
+      </div>
+      <p>{{ thread.comment.content }}</p>
+      <div class="comment-actions">
+        <button (click)="reactToComment(thread.comment)">
+          Like ({{ thread.comment.reactions.length }})
+        </button>
+      </div>
+
+      <form [formGroup]="getReplyForm(thread.comment.id)" (ngSubmit)="submitReply(thread.comment.id)">
+        <input formControlName="content" placeholder="Write a reply..." />
+        <button type="submit" [disabled]="getReplyForm(thread.comment.id).invalid">
+          Reply
+        </button>
+      </form>
+
+      <div class="reply-list" *ngIf="thread.replies.length > 0">
+        <article class="reply-card" *ngFor="let replyThread of thread.replies">
+          <div class="comment-header">
+            <strong>
+              {{ replyThread.comment.creator.firstName }}
+              {{ replyThread.comment.creator.lastName }}
+            </strong>
+            <span>{{ formatDate(replyThread.comment.creationDate) }}</span>
+          </div>
+          <p>{{ replyThread.comment.content }}</p>
+          <div class="comment-actions">
+            <button (click)="reactToComment(replyThread.comment)">
+              Like ({{ replyThread.comment.reactions.length }})
+            </button>
+          </div>
+        </article>
+      </div>
+    </article>
+  </section>
+</div>
+
+<ng-template #loadingTemplate>
+  <div class="loading">Loading post details...</div>
+</ng-template>

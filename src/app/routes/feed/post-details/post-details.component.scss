@@ -1,0 +1,48 @@
+.post-details-container {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.post-card,
+.comment-create,
+.comment-card,
+.reply-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #4b5563;
+}
+
+.comment-actions {
+  margin-bottom: 0.5rem;
+}
+
+textarea,
+input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+button {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.reply-list {
+  margin-left: 1.25rem;
+}
