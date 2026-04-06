@@ -70,7 +70,7 @@
                 conversationTitle(c)
               }}</span>
               <span class="chat-page__sidebar-row-meta">{{
-                c.message.sender?.nickName
+                c.message.sender.nickName
               }}</span>
               <span class="chat-page__sidebar-row-preview">{{
                 messagePreview(c)
@@ -92,8 +92,10 @@
               <app-message-bubble
                 [message]="message"
                 [isSender]="message.sender.id === me?.id"
+                [myParticipantId]="me?.id ?? ''"
                 [participant]="getReceiver(message.sender.id)"
                 (retry)="retryMessage($event)"
+                (toggleReaction)="onToggleReaction($event)"
               >
               </app-message-bubble>
             </ng-container>

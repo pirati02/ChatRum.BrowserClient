@@ -9,6 +9,31 @@
   <app-message-content [content]="message.content" [alignStyle]="alignStyle">
   </app-message-content>
 
+  <div class="reaction-summary" *ngIf="groupedReactions.length > 0">
+    <button
+      type="button"
+      class="reaction-chip"
+      *ngFor="let reaction of groupedReactions"
+      [class.reaction-chip--mine]="reaction.mine"
+      (click)="onToggleReaction(reaction.emoji)"
+    >
+      <span>{{ reaction.emoji }}</span>
+      <span>{{ reaction.count }}</span>
+    </button>
+  </div>
+
+  <div class="reaction-actions">
+    <button
+      type="button"
+      class="reaction-btn"
+      *ngFor="let emoji of reactionOptions"
+      (click)="onToggleReaction(emoji)"
+      [attr.aria-label]="'React with ' + emoji"
+    >
+      {{ emoji }}
+    </button>
+  </div>
+
   <div class="status-row" *ngIf="isSender">
     <span
       class="status-text"

@@ -38,7 +38,10 @@ import {
   ChatDetailsData,
 } from '../chat-details/chat-details.component';
 import { ChatResponse } from '../../models/chat.response';
-import { ImageContent, PlainTextContent } from '../../models/message.content';
+import {
+  AttachmentContent,
+  PlainTextContent,
+} from '../../models/message.content';
 import { normalizeMessageContent } from '../../models/message-content.mapper';
 import { HelperService } from '../../services/helper.service';
 import {
@@ -49,6 +52,7 @@ import { AccountsService } from '../../services/accounts.service';
 import { SelectedAccountService } from '../../services/selected-account.service';
 import { LastChatResponse } from '../../models/last-chat.response';
 import { LastestMessage } from '../../models/latest-message.response';
+import { MessageReaction, MessageReactionEmoji } from '../../models/message-reaction';
 
 export type uiStatus = 'sent' | 'seen' | 'delivered' | 'failed' | '';
 
@@ -158,20 +162,35 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   onSendFile(event: SendFileEvent) {
     if (!event.file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(',')[1];
+    this.chatService.uploadAttachment(event.file).subscribe((uploaded) => {
       this.dispatchMessage({
         sender: this.me!,
-        content: <ImageContent>{
-          type: 'image',
-          $type: 'image',
-          content: base64,
+        content: <AttachmentContent>{
+          type: 'attachment',
+          $type: 'attachment',
+          content: uploaded.url,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+          sizeBytes: uploaded.sizeBytes,
         },
         replyOf: null,
       });
-    };
-    reader.readAsDataURL(event.file);
+    });
+  }
+
+  onToggleReaction(event: { message: UiMessage; emoji: MessageReactionEmoji }) {
+    if (!this.chat.chatId || !this.me?.id) {
+      return;
+    }
+
+    this.chatService
+      .updateMessageReaction(
+        this.chat.chatId,
+        event.message.messageId,
+        this.me,
+        event.emoji,
+      )
+      .subscribe();
   }
 
   private dispatchMessage(message: MessageRequest) {
@@ -245,8 +264,8 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!content) {
       return '';
     }
-    if (content.type === 'image') {
-      return 'Image';
+    if (content.type === 'attachment') {
+      return 'Attachment';
     }
     return content.content ?? '';
   }
@@ -383,6 +402,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
     return {
       ...message,
       content: normalizeMessageContent(message.content),
+      reactions: message.reactions ?? [],
       statusString: this.statusString(message.status),
     };
   }
@@ -512,6 +532,9 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       this.chatService.messageFailed$.subscribe((result) =>
         this.handleMessageFailed(result),
       ),
+      this.chatService.updateMessageReaction$.subscribe((result) =>
+        this.handleMessageReactionUpdate(result),
+      ),
     );
   }
 
@@ -569,6 +592,18 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       });
       this.scrollToBottom();
     }
+  }
+
+  private handleMessageReactionUpdate(
+    result: { messageId: string; reactions: MessageReaction[] } | null,
+  ) {
+    if (!result?.messageId) return;
+    const message = this.chat.messages.find((m) => m.messageId === result.messageId);
+    if (!message) {
+      return;
+    }
+
+    message.reactions = result.reactions ?? [];
   }
 
   private updateRecentChatPreview(message: UiMessage): void {
