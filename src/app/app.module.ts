@@ -32,6 +32,7 @@ import { MessageBubbleComponent } from './routes/chat/message-bubble/message-bub
 import { MessageInputComponent } from './routes/chat/message-input/message-input.component';
 import { FriendsComponent } from './routes/friends/friends.component';
 import { PostDetailsComponent } from './routes/feed/post-details/post-details.component';
+import { CreatePostComponent } from './routes/feed/create-post/create-post.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +47,7 @@ import { PostDetailsComponent } from './routes/feed/post-details/post-details.co
     MessageBubbleComponent,
     MessageInputComponent,
     PostDetailsComponent,
+    CreatePostComponent,
   ],
   imports: [
     CommonModule,

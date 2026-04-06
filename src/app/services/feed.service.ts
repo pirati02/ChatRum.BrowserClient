@@ -32,6 +32,15 @@ export class FeedService {
     return this.httpClient.post<string>(this.baseUrl, post);
   }
 
+  uploadAttachment(file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.httpClient.post<FeedAttachmentUploadResponse>(
+      this.baseUrl + `/attachments`,
+      formData,
+    );
+  }
+
   getPostDetails(postId: string) {
     return this.httpClient.get<PostDetailsResponse>(
       this.baseUrl + `/${postId}/details`,
@@ -62,4 +71,12 @@ export class FeedService {
       payload,
     );
   }
+}
+
+export interface FeedAttachmentUploadResponse {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  url: string;
 }

@@ -11,7 +11,12 @@ import {
 import { Account } from '../../../models/account';
 import { AccountsService } from '../../../services/accounts.service';
 import { Participant } from '../../../models/participant';
-import { Reaction } from '../../../models/post.response';
+import { AttachmentId, Reaction } from '../../../models/post.response';
+import { AuthSessionService } from '../../../core/auth/auth-session.service';
+import { environment } from '../../../../environments/environment';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 @Component({
   selector: 'app-post-details',
@@ -27,12 +32,16 @@ export class PostDetailsComponent implements OnInit {
   account?: Account;
   accountId = '';
   postId = '';
+  private readonly gatewayBase = environment.gatewayUrl.replace(/\/$/, '');
+  private readonly markdownCache = new Map<string, SafeHtml>();
 
   constructor(
     private activatedRoute: ActivatedRoute,
     private fb: FormBuilder,
     private feedService: FeedService,
     private accountsService: AccountsService,
+    private authSession: AuthSessionService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -168,6 +177,35 @@ export class PostDetailsComponent implements OnInit {
       hour: 'numeric',
       minute: '2-digit',
     }).format(new Date(dateString));
+  }
+
+  getAttachmentUrl(attachment: AttachmentId): string {
+    const id = attachment?.guid;
+    if (!id) {
+      return '';
+    }
+
+    const url = `${this.gatewayBase}/feed/attachments/${id}`;
+    const token = this.authSession.getAccessToken();
+    if (!token) {
+      return url;
+    }
+
+    return `${url}?access_token=${encodeURIComponent(token)}`;
+  }
+
+  toSafeMarkdown(markdown: string | undefined): SafeHtml {
+    const content = markdown ?? '';
+    const cached = this.markdownCache.get(content);
+    if (cached) {
+      return cached;
+    }
+
+    const rendered = marked.parse(content, { breaks: true, async: false });
+    const sanitized = DOMPurify.sanitize(rendered);
+    const safeHtml = this.sanitizer.bypassSecurityTrustHtml(sanitized);
+    this.markdownCache.set(content, safeHtml);
+    return safeHtml;
   }
 
   private getCurrentParticipant(): Participant | null {

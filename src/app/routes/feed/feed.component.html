@@ -7,76 +7,10 @@
 
   <div class="feed-content">
     <!-- Create Post Section -->
-    <section class="create-post-section">
-      <div class="create-post-card">
-        <div class="create-post-header">
-          <h2>Create a New Post</h2>
-          <span class="create-post-icon">✨</span>
-        </div>
-
-        <form
-          [formGroup]="newPostForm"
-          (ngSubmit)="createPost()"
-          class="create-post-form"
-        >
-          <div class="form-group">
-            <label for="title" class="form-label">Title</label>
-            <input
-              id="title"
-              type="text"
-              class="form-control"
-              formControlName="title"
-              placeholder="What's on your mind?"
-            />
-            <div
-              *ngIf="
-                newPostForm.get('title')?.invalid &&
-                newPostForm.get('title')?.touched
-              "
-              class="form-error"
-            >
-              Title is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="description" class="form-label">Description</label>
-            <textarea
-              id="description"
-              class="form-control"
-              rows="4"
-              formControlName="description"
-              placeholder="Share your story, thoughts, or experiences..."
-            ></textarea>
-            <div
-              *ngIf="
-                newPostForm.get('description')?.invalid &&
-                newPostForm.get('description')?.touched
-              "
-              class="form-error"
-            >
-              Description is required
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            class="post-submit-btn"
-            [disabled]="submitting || newPostForm.invalid"
-            [class.loading]="submitting"
-          >
-            <span *ngIf="!submitting" class="btn-content">
-              <span class="btn-icon">📝</span>
-              <span>Publish Post</span>
-            </span>
-            <span *ngIf="submitting" class="btn-loading">
-              <span class="spinner"></span>
-              <span>Publishing...</span>
-            </span>
-          </button>
-        </form>
-      </div>
-    </section>
+    <app-create-post
+      [account]="account"
+      (postCreated)="onPostCreated()"
+    ></app-create-post>
 
     <!-- Feed Posts Section -->
     <section class="feed-posts-section">
@@ -111,8 +45,18 @@
               </div>
 
               <div class="post-content">
-                <h3 class="post-title">{{ post.title }}</h3>
-                <p class="post-description">{{ post.description }}</p>
+                <div
+                  class="post-description markdown-content"
+                  [innerHTML]="toSafeMarkdown(post.description)"
+                ></div>
+                <div class="post-images" *ngIf="post.attachments.length > 0">
+                  <img
+                    *ngFor="let attachment of post.attachments"
+                    [src]="getAttachmentUrl(attachment)"
+                    alt="Post image"
+                    loading="lazy"
+                  />
+                </div>
               </div>
 
               <div class="post-footer">

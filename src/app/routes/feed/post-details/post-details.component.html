@@ -1,11 +1,21 @@
 <div class="post-details-container" *ngIf="!loading && details; else loadingTemplate">
   <section class="post-card">
-    <h1 class="title">{{ details.post.title }}</h1>
     <p class="meta">
       {{ details.post.creator.firstName }} {{ details.post.creator.lastName }} ·
       {{ formatDate(details.post.creationDate) }}
     </p>
-    <p class="description">{{ details.post.description }}</p>
+    <div
+      class="description markdown-content"
+      [innerHTML]="toSafeMarkdown(details.post.description)"
+    ></div>
+    <div class="post-images" *ngIf="details.post.attachments.length > 0">
+      <img
+        *ngFor="let attachment of details.post.attachments"
+        [src]="getAttachmentUrl(attachment)"
+        alt="Post image"
+        loading="lazy"
+      />
+    </div>
   </section>
 
   <section class="comment-create">

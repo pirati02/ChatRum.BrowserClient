@@ -1,0 +1,94 @@
+<section class="create-post-section">
+  <div class="create-post-card">
+    <div class="create-post-header">
+      <h2>Create a New Post</h2>
+      <span class="create-post-icon">✨</span>
+    </div>
+
+    <form [formGroup]="newPostForm" (ngSubmit)="createPost()" class="create-post-form">
+      <div class="form-group">
+        <label for="description" class="form-label">Post (Markdown)</label>
+        <div class="markdown-toolbar">
+          <button type="button" class="toolbar-btn" (click)="applyMarkdown('bold', descriptionInput)">
+            Bold
+          </button>
+          <button type="button" class="toolbar-btn" (click)="applyMarkdown('italic', descriptionInput)">
+            Italic
+          </button>
+          <button
+            type="button"
+            class="toolbar-btn"
+            (click)="applyMarkdown('heading', descriptionInput)"
+          >
+            Heading
+          </button>
+          <button type="button" class="toolbar-btn" (click)="applyMarkdown('list', descriptionInput)">
+            List
+          </button>
+          <button type="button" class="toolbar-btn" (click)="applyMarkdown('link', descriptionInput)">
+            Link
+          </button>
+        </div>
+
+        <textarea
+          #descriptionInput
+          id="description"
+          class="form-control"
+          rows="6"
+          formControlName="description"
+          (keydown)="onDescriptionKeydown($event, descriptionInput)"
+          placeholder="Write your post using markdown (links, **bold**, *italic*)."
+        ></textarea>
+
+        <div
+          *ngIf="newPostForm.get('description')?.invalid && newPostForm.get('description')?.touched"
+          class="form-error"
+        >
+          Post description is required
+        </div>
+        <p class="form-hint">Supports markdown links, headings, lists, bold and italic text.</p>
+      </div>
+
+      <div class="preview" *ngIf="newPostForm.value.description">
+        <p class="preview-title">Preview</p>
+        <div class="preview-content markdown-content" [innerHTML]="toSafeMarkdown(newPostForm.value.description)"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="images" class="form-label">Attach Images</label>
+        <input
+          id="images"
+          type="file"
+          class="form-control"
+          accept="image/*"
+          multiple
+          (change)="onImageSelection($event)"
+        />
+        <p class="form-hint">Up to {{ maxImageCount }} images, 20MB max per file.</p>
+
+        <div class="selected-images" *ngIf="selectedImageFiles.length > 0">
+          <div class="selected-image-item" *ngFor="let file of selectedImageFiles; let i = index">
+            <span>{{ file.name }}</span>
+            <button type="button" (click)="removeSelectedImage(i)">Remove</button>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="post-submit-btn"
+        [disabled]="submitting || newPostForm.invalid"
+        [class.loading]="submitting"
+      >
+        <span *ngIf="!submitting" class="btn-content">
+          <span class="btn-icon">📝</span>
+          <span>Publish Post</span>
+        </span>
+        <span *ngIf="submitting" class="btn-loading">
+          <span class="spinner"></span>
+          <span>Publishing...</span>
+        </span>
+      </button>
+    </form>
+  </div>
+</section>
