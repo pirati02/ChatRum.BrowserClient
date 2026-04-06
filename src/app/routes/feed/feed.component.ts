@@ -243,4 +243,37 @@ export class FeedComponent implements OnInit {
       reaction.actor.id === actor.id ? { ...reaction, reactionType } : reaction,
     );
   }
+
+  private getCurrentParticipant(): Participant | null {
+    if (!this.account) {
+      return null;
+    }
+
+    return {
+      id: this.account.id,
+      firstName: this.account.firstName,
+      lastName: this.account.lastName,
+      nickName: this.account.userName,
+      isAdmin: false,
+    };
+  }
+
+  private toggleReaction(
+    reactions: Reaction[],
+    actor: Participant,
+    reactionType: number,
+  ): Reaction[] {
+    const existing = reactions.find((reaction) => reaction.actor.id === actor.id);
+    if (!existing) {
+      return [...reactions, { actor, reactionType }];
+    }
+
+    if (existing.reactionType === reactionType) {
+      return reactions.filter((reaction) => reaction.actor.id !== actor.id);
+    }
+
+    return reactions.map((reaction) =>
+      reaction.actor.id === actor.id ? { ...reaction, reactionType } : reaction,
+    );
+  }
 }
