@@ -1,18 +1,73 @@
 <ng-container [ngSwitch]="displayKind">
   <ng-container *ngSwitchCase="'plain'">
-    <span style="font-size: 1.2em">{{ content.content }}</span>
+    <ng-container *ngIf="isImageUrlContent; else plainText">
+      <div class="message-content__image" [ngStyle]="{ 'align-self': alignStyle }">
+        <img
+          [src]="imageSource"
+          [alt]="'message image'"
+          class="message-content__preview"
+        />
+        <button
+          type="button"
+          class="message-content__zoom-trigger"
+          (click)="openImageFullSize(imageSource)"
+          aria-label="Open image in full size"
+        >
+          +
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #plainText>
+      <span style="font-size: 1.2em">{{ content.content }}</span>
+    </ng-template>
   </ng-container>
   <ng-container *ngSwitchCase="'link'">
-    <a style="font-size: 1.2em" [href]="content.content" target="_blank">{{
-      content.content
-    }}</a>
+    <ng-container *ngIf="isImageUrlContent; else nonImageLink">
+      <div class="message-content__image" [ngStyle]="{ 'align-self': alignStyle }">
+        <img
+          [src]="imageSource"
+          [alt]="'linked image'"
+          class="message-content__preview"
+        />
+        <button
+          type="button"
+          class="message-content__zoom-trigger"
+          (click)="openImageFullSize(imageSource)"
+          aria-label="Open image in full size"
+        >
+          +
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #nonImageLink>
+      <a style="font-size: 1.2em" [href]="contentUrl" target="_blank">{{
+        content.content
+      }}</a>
+    </ng-template>
   </ng-container>
-  <ng-container *ngSwitchCase="'image'">
-    <img
-      [src]="'data:image/png;base64,' + content.content"
-      style="max-width: 20rem; max-height: 20rem"
-      [ngStyle]="{ 'align-self': alignStyle }"
-    />
+  <ng-container *ngSwitchCase="'attachment'">
+    <ng-container *ngIf="isImageAttachment; else fileDownload">
+      <div class="message-content__image" [ngStyle]="{ 'align-self': alignStyle }">
+        <img
+          [src]="attachmentImageUrl"
+          [alt]="attachment?.fileName || 'attachment'"
+          class="message-content__preview"
+        />
+        <button
+          type="button"
+          class="message-content__zoom-trigger"
+          (click)="openImageFullSize(attachmentImageUrl)"
+          aria-label="Open image in full size"
+        >
+          +
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #fileDownload>
+      <a [href]="attachmentDownloadUrl" target="_blank" rel="noopener noreferrer">
+        {{ attachment?.fileName || 'Download attachment' }}
+      </a>
+    </ng-template>
   </ng-container>
   <ng-container *ngSwitchDefault>
     <span class="message-content__fallback" style="font-size: 1.2em"
@@ -20,3 +75,21 @@
     >
   </ng-container>
 </ng-container>
+
+<div
+  *ngIf="isImageModalOpen"
+  class="message-content__modal-backdrop"
+  (click)="closeImageModal()"
+>
+  <div class="message-content__modal-content" (click)="$event.stopPropagation()">
+    <button
+      type="button"
+      class="message-content__modal-close"
+      (click)="closeImageModal()"
+      aria-label="Close full-size image"
+    >
+      x
+    </button>
+    <img [src]="modalImageUrl" alt="full size image" class="message-content__modal-image" />
+  </div>
+</div>

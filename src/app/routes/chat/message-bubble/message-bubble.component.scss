@@ -39,6 +39,59 @@
   gap: 0.5rem;
 }
 
+.reaction-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.reaction-chip {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.reaction-chip--mine {
+  border-color: var(--active-color);
+}
+
+.reaction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.reaction-btn {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+}
+
+.message-bubble:hover .reaction-actions,
+.message-bubble:focus-within .reaction-actions {
+  opacity: 1;
+  max-height: 4rem;
+  pointer-events: auto;
+}
+
 .status-text {
   font-size: 0.75rem;
   color: var(--bubble-meta-text);

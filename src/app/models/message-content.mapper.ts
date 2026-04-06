@@ -14,11 +14,11 @@ function readDiscriminator(raw: Record<string, unknown>): string {
 }
 
 /**
- * Maps API polymorphic names to plain | link | image, or legacy for blobs we cannot render as text.
+ * Maps API polymorphic names to plain | link | attachment, or legacy for blobs we cannot render as text.
  */
 function resolveKind(
   discriminator: string,
-): 'plain' | 'link' | 'image' | 'legacy' | null {
+): 'plain' | 'link' | 'attachment' | 'legacy' | null {
   const d = discriminator.trim().toLowerCase();
   const leaf = d.includes('.') ? d.split('.').pop() ?? d : d;
 
@@ -28,15 +28,15 @@ function resolveKind(
   if (leaf.includes('link')) {
     return 'link';
   }
-  if (leaf.includes('image')) {
-    return 'image';
+  if (leaf.includes('attachment')) {
+    return 'attachment';
   }
   if (leaf.includes('plain')) {
     return 'plain';
   }
 
-  if (['plain', 'link', 'image'].includes(leaf)) {
-    return leaf as 'plain' | 'link' | 'image';
+  if (['plain', 'link', 'attachment'].includes(leaf)) {
+    return leaf as 'plain' | 'link' | 'attachment';
   }
   if (leaf === 'encrypted') {
     return 'legacy';
@@ -136,7 +136,7 @@ function looksLikeOpaqueBase64Line(s: string): boolean {
 const UNAVAILABLE_PLACEHOLDER = '[Message content unavailable.]';
 
 /**
- * Normalizes HTTP/SignalR message content to plain, link, or image only.
+ * Normalizes HTTP/SignalR message content to plain, link, or attachment.
  * Historical non-text payloads are replaced with a short placeholder.
  */
 export function normalizeMessageContent(raw: unknown): MessageContentUnion {
@@ -160,8 +160,23 @@ export function normalizeMessageContent(raw: unknown): MessageContentUnion {
     return { type: 'link', $type: 'link', content: pickBody(r) };
   }
 
-  if (kind === 'image') {
-    return { type: 'image', $type: 'image', content: pickBody(r) };
+  if (kind === 'attachment') {
+    const fileName = pickString(r, ['fileName', 'FileName']) ?? 'attachment';
+    const mimeType =
+      pickString(r, ['mimeType', 'MimeType']) ?? 'application/octet-stream';
+    const sizeCandidate = r['sizeBytes'] ?? r['SizeBytes'];
+    const sizeBytes =
+      typeof sizeCandidate === 'number' && Number.isFinite(sizeCandidate)
+        ? sizeCandidate
+        : 0;
+    return {
+      type: 'attachment',
+      $type: 'attachment',
+      content: pickBody(r),
+      fileName,
+      mimeType,
+      sizeBytes,
+    };
   }
 
   if (kind === 'plain') {

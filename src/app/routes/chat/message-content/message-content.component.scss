@@ -1,3 +1,73 @@
 :host {
   display: contents;
 }
+
+.message-content__image {
+  display: inline-flex;
+  position: relative;
+  max-width: 20rem;
+  max-height: 20rem;
+}
+
+.message-content__preview {
+  max-width: 20rem;
+  max-height: 20rem;
+  display: block;
+}
+
+.message-content__zoom-trigger {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 60%);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+}
+
+.message-content__image:hover .message-content__zoom-trigger {
+  opacity: 1;
+}
+
+.message-content__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 72%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+  padding: 1rem;
+}
+
+.message-content__modal-content {
+  position: relative;
+  max-width: min(95vw, 1200px);
+  max-height: 95vh;
+}
+
+.message-content__modal-image {
+  display: block;
+  max-width: 100%;
+  max-height: 95vh;
+}
+
+.message-content__modal-close {
+  position: absolute;
+  top: -0.75rem;
+  right: -0.75rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 75%);
+  color: #fff;
+  cursor: pointer;
+}

@@ -11,6 +11,15 @@ import { UiMessage } from '../routes/chat/chat.component';
 import { ChatResponse } from '../models/chat.response';
 import { LastChatResponse } from '../models/last-chat.response';
 import { Participant } from '../models/participant';
+import { MessageReaction, MessageReactionEmoji } from '../models/message-reaction';
+
+export interface UploadedAttachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  url: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -27,10 +36,15 @@ export class ChatService {
     status: MessageStatus;
   } | null>(null);
   private messageFailedSubject = new BehaviorSubject<UiMessage | null>(null);
+  private updateMessageReactionSubject = new BehaviorSubject<{
+    messageId: string;
+    reactions: MessageReaction[];
+  } | null>(null);
 
   chatAppendMessage$ = this.chatAppendMessageSubject.asObservable();
   updateMessageState$ = this.updateMessageStateSubject.asObservable();
   messageFailed$ = this.messageFailedSubject.asObservable();
+  updateMessageReaction$ = this.updateMessageReactionSubject.asObservable();
   chatStarted$ = this.chatCreatedSubject.asObservable();
 
   constructor(
@@ -79,6 +93,16 @@ export class ChatService {
       'MessageStateUpdated',
       (messageId: string, status: MessageStatus) => {
         this.updateMessageStateSubject.next({ messageId, status });
+      },
+    );
+
+    this.hubConnection.on(
+      'MessageReactionUpdated',
+      (messageId: string, reactions: MessageReaction[]) => {
+        this.updateMessageReactionSubject.next({
+          messageId,
+          reactions: reactions ?? [],
+        });
       },
     );
   }
@@ -134,6 +158,15 @@ export class ChatService {
     return of(null);
   }
 
+  uploadAttachment(file: File): Observable<UploadedAttachment> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.httpClient.post<UploadedAttachment>(
+      this.baseUrl + `/attachments`,
+      formData,
+    );
+  }
+
   updateMessageStatus(message: UiMessage, messageStatus: MessageStatus) {
     if (this.hubConnection?.state == HubConnectionState.Connected) {
       return fromPromise(
@@ -143,6 +176,25 @@ export class ChatService {
           message,
           messageStatus,
         ),
+      );
+    }
+
+    return of(null);
+  }
+
+  updateMessageReaction(
+    chatId: string,
+    messageId: string,
+    actor: Participant,
+    emoji: MessageReactionEmoji,
+  ) {
+    if (this.hubConnection?.state == HubConnectionState.Connected) {
+      return fromPromise(
+        this.hubConnection.invoke('UpdateMessageReaction', chatId, {
+          messageId,
+          actor,
+          emoji,
+        }),
       );
     }
 
