@@ -1,14 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { FeedService } from '../../services/feed.service';
 import { finalize, tap } from 'rxjs';
-import { PostDocumentResponse } from '../../models/post.response';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AttachmentId, PostDocumentResponse } from '../../models/post.response';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccountsService } from '../../services/accounts.service';
 import { SelectedAccountService } from '../../services/selected-account.service';
 import { Account } from '../../models/account';
 import { Participant } from '../../models/participant';
 import { Reaction } from '../../models/post.response';
+import { AuthSessionService } from '../../core/auth/auth-session.service';
+import { environment } from '../../../environments/environment';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-feed',
@@ -18,17 +22,18 @@ import { Reaction } from '../../models/post.response';
 export class FeedComponent implements OnInit {
   loading = false;
   postDocuments: PostDocumentResponse[] = [];
-  newPostForm!: FormGroup;
-  submitting = false;
   account?: Account;
+  private readonly gatewayBase = environment.gatewayUrl.replace(/\/$/, '');
+  private readonly markdownCache = new Map<string, SafeHtml>();
 
   constructor(
     private feedService: FeedService,
     private accountsService: AccountsService,
-    private fb: FormBuilder,
     private activatedRoute: ActivatedRoute,
     private selectedAccount: SelectedAccountService,
     private router: Router,
+    private authSession: AuthSessionService,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -45,15 +50,6 @@ export class FeedComponent implements OnInit {
         )
         .subscribe();
     });
-
-    this.initForm();
-  }
-
-  private initForm(): void {
-    this.newPostForm = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(200)]],
-      description: ['', [Validators.required, Validators.maxLength(2000)]],
-    });
   }
 
   private loadFeed(): void {
@@ -69,37 +65,37 @@ export class FeedComponent implements OnInit {
       .subscribe();
   }
 
-  createPost(): void {
-    if (this.newPostForm.invalid) {
-      this.newPostForm.markAllAsTouched();
-      return;
+  getAttachmentUrl(attachment: AttachmentId): string {
+    const id = attachment?.guid;
+    if (!id) {
+      return '';
     }
 
-    const newPostData = {
-      ...this.newPostForm.value,
-      creator: {
-        id: this.account?.id,
-        firstName: this.account?.firstName,
-        lastName: this.account?.lastName,
-        nickName: this.account?.userName,
-      },
-    };
+    const url = `${this.gatewayBase}/feed/attachments/${id}`;
+    const token = this.authSession.getAccessToken();
+    if (!token) {
+      return url;
+    }
 
-    this.submitting = true;
+    return `${url}?access_token=${encodeURIComponent(token)}`;
+  }
 
-    this.feedService
-      .createPost(newPostData)
-      .pipe(
-        tap(() => {
-          this.loadFeed();
-          this.newPostForm.reset();
-        }),
-        finalize(() => (this.submitting = false)),
-      )
-      .subscribe({
-        next: () => console.log('Post created successfully'),
-        error: (err) => console.error('Failed to create post', err),
-      });
+  onPostCreated(): void {
+    this.loadFeed();
+  }
+
+  toSafeMarkdown(markdown: string | undefined): SafeHtml {
+    const content = markdown ?? '';
+    const cached = this.markdownCache.get(content);
+    if (cached) {
+      return cached;
+    }
+
+    const rendered = marked.parse(content, { breaks: true, async: false });
+    const sanitized = DOMPurify.sanitize(rendered);
+    const safeHtml = this.sanitizer.bypassSecurityTrustHtml(sanitized);
+    this.markdownCache.set(content, safeHtml);
+    return safeHtml;
   }
 
   reactToPost(post: PostDocumentResponse): void {
@@ -203,11 +199,13 @@ export class FeedComponent implements OnInit {
         block: 'start',
       });
 
-      // Focus on the title input after scrolling
+      // Focus on the description input after scrolling
       setTimeout(() => {
-        const titleInput = document.querySelector('#title') as HTMLInputElement;
-        if (titleInput) {
-          titleInput.focus();
+        const descriptionInput = document.querySelector(
+          '#description',
+        ) as HTMLTextAreaElement;
+        if (descriptionInput) {
+          descriptionInput.focus();
         }
       }, 500);
     }

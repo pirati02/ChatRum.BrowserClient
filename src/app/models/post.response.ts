@@ -6,7 +6,6 @@ export interface PostDocumentResponse {
   creationDate: string;
   reactions: Reaction[];
   shares: Share[];
-  title: string;
   description: string;
   attachments: AttachmentId[];
 }
@@ -32,5 +31,5 @@ export interface Share {
 }
 
 export interface AttachmentId {
-  id: string;
+  guid: string;
 }
