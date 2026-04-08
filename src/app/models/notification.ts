@@ -1,4 +1,12 @@
-export type NotificationType = 'PostComment' | 'CommentReply' | 'PostReaction' | 'CommentReaction' | string;
+export type NotificationType =
+  | 'PostComment'
+  | 'CommentReply'
+  | 'PostReaction'
+  | 'CommentReaction'
+  | 'FriendRequestReceived'
+  | 'FriendRequestAccepted'
+  | 'FriendRequestRejected'
+  | string;
 
 export interface NotificationItem {
   id: string;

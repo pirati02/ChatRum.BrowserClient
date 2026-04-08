@@ -120,6 +120,15 @@ export class FriendshipService {
       .pipe(map((response) => !!response));
   }
 
+  rejectFriendRequest(peer1: Peer, peer2: Peer) {
+    return this.httpClient
+      .post(`${this.baseUrl}/reject`, {
+        peer1,
+        peer2,
+      })
+      .pipe(map((response) => !!response));
+  }
+
   unfriendRequest(peer1: Peer, peer2: Peer) {
     return this.httpClient.delete(`${this.baseUrl}/unfriend`, {
       body: {

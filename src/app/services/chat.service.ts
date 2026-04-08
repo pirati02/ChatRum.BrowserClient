@@ -60,6 +60,14 @@ export class ChatService {
       console.warn('Chat SignalR: no access token; connection not started');
       return;
     }
+    if (
+      this.hubConnection &&
+      (this.hubConnection.state === signalR.HubConnectionState.Connected ||
+        this.hubConnection.state === signalR.HubConnectionState.Connecting ||
+        this.hubConnection.state === signalR.HubConnectionState.Reconnecting)
+    ) {
+      return;
+    }
     const hubUrl = this.buildHubUrl(accountId);
     this.hubConnection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
