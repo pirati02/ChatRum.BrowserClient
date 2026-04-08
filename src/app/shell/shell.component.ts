@@ -37,8 +37,10 @@ export class ShellComponent implements OnInit, OnDestroy {
   private routerSub?: Subscription;
   private unreadSub?: Subscription;
   private notificationsSub?: Subscription;
+  private chatMessageSub?: Subscription;
   unreadCount = 0;
   notifications: NotificationItem[] = [];
+  chatAlerts: { id: string; message: string; chatId: string }[] = [];
 
   constructor(
     private selectedAccount: SelectedAccountService,
@@ -53,6 +55,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loggedInAccountId = this.auth.getJwtClaims()?.sub ?? null;
     if (this.loggedInAccountId) {
+      this.chat.startConnection(this.loggedInAccountId);
       this.notificationsService.startConnection(this.loggedInAccountId);
       this.notificationsService.loadInitial().subscribe({
         next: (page) => this.notificationsService.setNotifications(page.items ?? []),
@@ -68,6 +71,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.notificationsSub = this.notificationsService.notifications$.subscribe((value) => {
       this.notifications = value;
     });
+    this.chatMessageSub = this.chat.chatAppendMessage$.subscribe((payload) => {
+      this.handleIncomingChatMessage(payload?.message);
+    });
 
     this.url = this.router.url;
     
@@ -82,6 +88,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.routerSub?.unsubscribe();
     this.unreadSub?.unsubscribe();
     this.notificationsSub?.unsubscribe();
+    this.chatMessageSub?.unsubscribe();
   }
 
   logout(): void {
@@ -100,6 +107,40 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.notificationModalOpen = false;
     this.markNotificationAsRead(notification);
     void this.navigateToNotificationTarget(notification);
+  }
+
+  acceptFriendRequest(notification: NotificationItem, event: Event): void {
+    event.stopPropagation();
+    const accountId = this.loggedInAccountId;
+    if (!accountId) {
+      return;
+    }
+
+    this.friendship
+      .acceptFriendRequest(
+        { peerId: accountId, userName: '' },
+        { peerId: notification.targetId, userName: notification.actorDisplayName },
+      )
+      .subscribe({
+        next: () => this.markNotificationAsRead(notification),
+      });
+  }
+
+  rejectFriendRequest(notification: NotificationItem, event: Event): void {
+    event.stopPropagation();
+    const accountId = this.loggedInAccountId;
+    if (!accountId) {
+      return;
+    }
+
+    this.friendship
+      .rejectFriendRequest(
+        { peerId: accountId, userName: '' },
+        { peerId: notification.targetId, userName: notification.actorDisplayName },
+      )
+      .subscribe({
+        next: () => this.markNotificationAsRead(notification),
+      });
   }
 
   markNotificationAsRead(notification: NotificationItem): void {
@@ -138,9 +179,29 @@ export class ShellComponent implements OnInit, OnDestroy {
         return `${notification.actorDisplayName} reacted to your post`;
       case 'CommentReaction':
         return `${notification.actorDisplayName} reacted to your comment`;
+      case 'FriendRequestReceived':
+        return `${notification.actorDisplayName} sent you a friend request`;
+      case 'FriendRequestAccepted':
+        return `${notification.actorDisplayName} accepted your friend request`;
+      case 'FriendRequestRejected':
+        return `${notification.actorDisplayName} rejected your friend request`;
       default:
         return `${notification.actorDisplayName} interacted with your content`;
     }
+  }
+
+  canTakeFriendRequestAction(notification: NotificationItem): boolean {
+    return notification.type === 'FriendRequestReceived' && !notification.isRead;
+  }
+
+  dismissChatAlert(alertId: string, event?: Event): void {
+    event?.stopPropagation();
+    this.chatAlerts = this.chatAlerts.filter((item) => item.id !== alertId);
+  }
+
+  openChatFromAlert(alertId: string, chatId: string): void {
+    this.dismissChatAlert(alertId);
+    void this.router.navigate(['/chat'], { queryParams: { chatId } });
   }
 
   relativeTime(isoDate: string): string {
@@ -174,6 +235,15 @@ export class ShellComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (
+      notification.type === 'FriendRequestReceived' ||
+      notification.type === 'FriendRequestAccepted' ||
+      notification.type === 'FriendRequestRejected'
+    ) {
+      await this.router.navigate(['/friends']);
+      return;
+    }
+
     await this.router.navigate(['/feed', accountId]);
   }
 
@@ -200,6 +270,41 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   chatActive(): boolean {
     return this.url.startsWith('/chat');
+  }
+
+  private handleIncomingChatMessage(
+    message: { chatId?: string; sender?: { id?: string; nickName?: string } } | undefined,
+  ): void {
+    if (!message?.chatId || !this.loggedInAccountId) {
+      return;
+    }
+
+    if (message.sender?.id === this.loggedInAccountId) {
+      return;
+    }
+
+    const activeChatId = this.router.parseUrl(this.router.url).queryParams['chatId'] as string | undefined;
+    const isViewingSameChat = this.chatActive() && activeChatId === message.chatId;
+    if (isViewingSameChat) {
+      return;
+    }
+
+    if (this.chatAlerts.some((item) => item.chatId === message.chatId)) {
+      return;
+    }
+
+    this.chatAlerts = [
+      {
+        id: this.createAlertId(),
+        message: `${message.sender?.nickName ?? 'Someone'} sent you a message`,
+        chatId: message.chatId,
+      },
+      ...this.chatAlerts,
+    ].slice(0, 3);
+  }
+
+  private createAlertId(): string {
+    return `chat-alert-${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
   }
 
   toggleMobileMenu(): void {

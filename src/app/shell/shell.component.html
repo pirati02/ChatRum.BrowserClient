@@ -76,15 +76,22 @@
                 <p class="notification-panel__empty">No notifications yet.</p>
               } @else {
                 @for (notification of notifications; track notification.id) {
-                  <button
-                    type="button"
-                    class="notification-panel__item"
-                    [class.is-unread]="!notification.isRead"
-                    (click)="openNotification(notification)"
-                  >
-                    <div class="notification-panel__message">{{ notificationMessage(notification) }}</div>
-                    <div class="notification-panel__time">{{ relativeTime(notification.createdAt) }}</div>
-                  </button>
+                  <div class="notification-panel__item" [class.is-unread]="!notification.isRead">
+                    <button type="button" class="notification-panel__item-main" (click)="openNotification(notification)">
+                      <div class="notification-panel__message">{{ notificationMessage(notification) }}</div>
+                      <div class="notification-panel__time">{{ relativeTime(notification.createdAt) }}</div>
+                    </button>
+                    @if (canTakeFriendRequestAction(notification)) {
+                      <div class="notification-panel__actions">
+                        <button type="button" class="notification-panel__action notification-panel__action--accept" (click)="acceptFriendRequest(notification, $event)">
+                          Accept
+                        </button>
+                        <button type="button" class="notification-panel__action notification-panel__action--reject" (click)="rejectFriendRequest(notification, $event)">
+                          Reject
+                        </button>
+                      </div>
+                    }
+                  </div>
                 }
               }
             </div>
@@ -153,6 +160,18 @@
   }
 
   <main class="shell-main">
+    @if (chatAlerts.length > 0) {
+      <div class="chat-alerts" aria-live="polite">
+        @for (alert of chatAlerts; track alert.id) {
+          <div class="chat-alerts__item" (click)="openChatFromAlert(alert.id, alert.chatId)">
+            <div class="chat-alerts__message">{{ alert.message }}</div>
+            <button type="button" class="chat-alerts__dismiss" (click)="dismissChatAlert(alert.id, $event)">
+              Dismiss
+            </button>
+          </div>
+        }
+      </div>
+    }
     <router-outlet />
   </main>
 
