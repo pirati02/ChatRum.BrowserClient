@@ -30,6 +30,7 @@ export class PostDetailsComponent implements OnInit {
   commentForm!: FormGroup;
   replyForms: Record<string, FormGroup> = {};
   account?: Account;
+  viewerAccount?: Account;
   accountId = '';
   postId = '';
   private readonly gatewayBase = environment.gatewayUrl.replace(/\/$/, '');
@@ -48,6 +49,15 @@ export class PostDetailsComponent implements OnInit {
     this.commentForm = this.fb.group({
       content: ['', [Validators.required, Validators.maxLength(2000)]],
     });
+
+    const viewerAccountId = this.authSession.getJwtClaims()?.sub;
+    if (viewerAccountId) {
+      this.accountsService.loadAccount(viewerAccountId).subscribe({
+        next: (account) => {
+          this.viewerAccount = account;
+        },
+      });
+    }
 
     this.activatedRoute.params.subscribe((params) => {
       this.accountId = params['accountId'] as string;
@@ -209,15 +219,15 @@ export class PostDetailsComponent implements OnInit {
   }
 
   private getCurrentParticipant(): Participant | null {
-    if (!this.account) {
+    if (!this.viewerAccount) {
       return null;
     }
 
     return {
-      id: this.account.id,
-      firstName: this.account.firstName,
-      lastName: this.account.lastName,
-      nickName: this.account.userName,
+      id: this.viewerAccount.id,
+      firstName: this.viewerAccount.firstName,
+      lastName: this.viewerAccount.lastName,
+      nickName: this.viewerAccount.userName,
       isAdmin: false,
     };
   }

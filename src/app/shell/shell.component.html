@@ -48,6 +48,50 @@
     </nav>
 
     <div class="shell-header__right">
+      <div class="shell-header__notifications">
+        <button
+          type="button"
+          class="shell-icon-btn shell-header__notification-btn"
+          (click)="toggleNotificationModal()"
+          [attr.aria-expanded]="notificationModalOpen"
+          aria-haspopup="dialog"
+          aria-label="Notifications"
+        >
+          <mat-icon>notifications</mat-icon>
+          @if (unreadCount > 0) {
+            <span class="shell-header__notification-badge">{{ unreadCount }}</span>
+          }
+        </button>
+        <app-inline-modal [(open)]="notificationModalOpen">
+          <section class="notification-panel">
+            <header class="notification-panel__header">
+              <h3>Notifications</h3>
+              <button type="button" class="notification-panel__mark-all" (click)="markAllNotificationsAsRead()">
+                Mark all as read
+              </button>
+            </header>
+
+            <div class="notification-panel__list">
+              @if (notifications.length === 0) {
+                <p class="notification-panel__empty">No notifications yet.</p>
+              } @else {
+                @for (notification of notifications; track notification.id) {
+                  <button
+                    type="button"
+                    class="notification-panel__item"
+                    [class.is-unread]="!notification.isRead"
+                    (click)="openNotification(notification)"
+                  >
+                    <div class="notification-panel__message">{{ notificationMessage(notification) }}</div>
+                    <div class="notification-panel__time">{{ relativeTime(notification.createdAt) }}</div>
+                  </button>
+                }
+              }
+            </div>
+          </section>
+        </app-inline-modal>
+      </div>
+
       <button
         type="button"
         mat-stroked-button

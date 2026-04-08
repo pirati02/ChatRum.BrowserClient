@@ -11,6 +11,8 @@ import { FriendshipService } from '../services/frienship.service';
 import { SelectedAccountService } from '../services/selected-account.service';
 import { InlineModalComponent } from '../shared/inline-modal/inline-modal.component';
 import { AccountInfoComponent } from '../routes/accounts/account-info/account-info.component';
+import { NotificationsService } from '../services/notifications.service';
+import { NotificationItem } from '../models/notification';
 
 @Component({
   selector: 'app-shell',
@@ -29,9 +31,14 @@ import { AccountInfoComponent } from '../routes/accounts/account-info/account-in
 export class ShellComponent implements OnInit, OnDestroy {
   mobileMenuOpen = false;
   accountModalOpen = false;
+  notificationModalOpen = false;
   loggedInAccountId: string | null = null;
   url = '';
   private routerSub?: Subscription;
+  private unreadSub?: Subscription;
+  private notificationsSub?: Subscription;
+  unreadCount = 0;
+  notifications: NotificationItem[] = [];
 
   constructor(
     private selectedAccount: SelectedAccountService,
@@ -40,10 +47,28 @@ export class ShellComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private chat: ChatService,
     private friendship: FriendshipService,
+    private notificationsService: NotificationsService,
   ) {}
 
   ngOnInit(): void {
     this.loggedInAccountId = this.auth.getJwtClaims()?.sub ?? null;
+    if (this.loggedInAccountId) {
+      this.notificationsService.startConnection(this.loggedInAccountId);
+      this.notificationsService.loadInitial().subscribe({
+        next: (page) => this.notificationsService.setNotifications(page.items ?? []),
+      });
+      this.notificationsService.loadUnreadCount().subscribe({
+        next: (response) => this.notificationsService.setUnreadCount(response.unreadCount ?? 0),
+      });
+    }
+
+    this.unreadSub = this.notificationsService.unreadCount$.subscribe((value) => {
+      this.unreadCount = value;
+    });
+    this.notificationsSub = this.notificationsService.notifications$.subscribe((value) => {
+      this.notifications = value;
+    });
+
     this.url = this.router.url;
     
     this.routerSub = this.router.events
@@ -55,13 +80,114 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
+    this.unreadSub?.unsubscribe();
+    this.notificationsSub?.unsubscribe();
   }
 
   logout(): void {
     this.chat.stopConnection();
     this.friendship.stopConnection();
+    this.notificationsService.stopConnection();
     this.auth.logout();
     void this.router.navigate(['/login']);
+  }
+
+  toggleNotificationModal(): void {
+    this.notificationModalOpen = !this.notificationModalOpen;
+  }
+
+  openNotification(notification: NotificationItem): void {
+    this.notificationModalOpen = false;
+    this.markNotificationAsRead(notification);
+    void this.navigateToNotificationTarget(notification);
+  }
+
+  markNotificationAsRead(notification: NotificationItem): void {
+    if (notification.isRead) {
+      return;
+    }
+
+    this.notificationsService.markRead(notification.id).subscribe({
+      next: () => {
+        this.notifications = this.notifications.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item,
+        );
+        this.notificationsService.setNotifications(this.notifications);
+        this.notificationsService.setUnreadCount(Math.max(0, this.unreadCount - 1));
+      },
+    });
+  }
+
+  markAllNotificationsAsRead(): void {
+    this.notificationsService.markAllRead().subscribe({
+      next: () => {
+        this.notifications = this.notifications.map((item) => ({ ...item, isRead: true }));
+        this.notificationsService.setNotifications(this.notifications);
+        this.notificationsService.setUnreadCount(0);
+      },
+    });
+  }
+
+  notificationMessage(notification: NotificationItem): string {
+    switch (notification.type) {
+      case 'PostComment':
+        return `${notification.actorDisplayName} commented on your post`;
+      case 'CommentReply':
+        return `${notification.actorDisplayName} replied to your comment`;
+      case 'PostReaction':
+        return `${notification.actorDisplayName} reacted to your post`;
+      case 'CommentReaction':
+        return `${notification.actorDisplayName} reacted to your comment`;
+      default:
+        return `${notification.actorDisplayName} interacted with your content`;
+    }
+  }
+
+  relativeTime(isoDate: string): string {
+    const now = Date.now();
+    const then = new Date(isoDate).getTime();
+    const diffSeconds = Math.max(0, Math.floor((now - then) / 1000));
+    if (diffSeconds < 60) {
+      return 'just now';
+    }
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) {
+      return `${diffMinutes}m ago`;
+    }
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  }
+
+  private async navigateToNotificationTarget(notification: NotificationItem): Promise<void> {
+    const accountId = await this.resolveNotificationAccountId();
+    if (!accountId) {
+      await this.router.navigate(['/']);
+      return;
+    }
+
+    if (notification.type === 'PostComment' || notification.type === 'PostReaction') {
+      await this.router.navigate(['/feed', accountId, 'post', notification.targetId]);
+      return;
+    }
+
+    await this.router.navigate(['/feed', accountId]);
+  }
+
+  private resolveNotificationAccountId(): Promise<string | null> {
+    if (this.loggedInAccountId) {
+      return Promise.resolve(this.loggedInAccountId);
+    }
+
+    return new Promise((resolve) => {
+      this.accounts.ensureDefaultAccountId(this.selectedAccount).subscribe({
+        next: (aid) => resolve(aid ?? null),
+        error: () => resolve(null),
+      });
+    });
   }
 
   feedActive(): boolean {

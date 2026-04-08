@@ -41,6 +41,11 @@ export const feedBaseUrlProvider: ValueProvider = {
   useValue: `${base}/feed`,
 };
 
+export const notificationsBaseUrlProvider: ValueProvider = {
+  provide: 'NOTIFICATIONS_BASE_URL',
+  useValue: `${base}/notifications`,
+};
+
 export const chatSignalUrlProvider: ValueProvider = {
   provide: 'CHAT_SIGNALR_URL',
   useValue: `${base}/hub/chat`,
@@ -49,6 +54,11 @@ export const chatSignalUrlProvider: ValueProvider = {
 export const friendshipSignalUrlProvider: ValueProvider = {
   provide: 'FRIENDSHIP_SIGNALR_URL',
   useValue: `${base}/hub/friendship`,
+};
+
+export const notificationsSignalUrlProvider: ValueProvider = {
+  provide: 'NOTIFICATIONS_SIGNALR_URL',
+  useValue: `${base}/hub/notifications`,
 };
 
 const gatewayUrlProvider: ValueProvider = {
@@ -70,8 +80,10 @@ export const appConfig: ApplicationConfig = {
     accountsBaseUrlProvider,
     chatSignalUrlProvider,
     friendshipSignalUrlProvider,
+    notificationsSignalUrlProvider,
     friendshipBaseUrlProvider,
     feedBaseUrlProvider,
+    notificationsBaseUrlProvider,
     importProvidersFrom(AppModule),
     provideAnimationsAsync(),
   ],

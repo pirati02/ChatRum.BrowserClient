@@ -23,6 +23,7 @@ export class FeedComponent implements OnInit {
   loading = false;
   postDocuments: PostDocumentResponse[] = [];
   account?: Account;
+  viewerAccount?: Account;
   private readonly gatewayBase = environment.gatewayUrl.replace(/\/$/, '');
   private readonly markdownCache = new Map<string, SafeHtml>();
 
@@ -37,6 +38,15 @@ export class FeedComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const viewerAccountId = this.authSession.getJwtClaims()?.sub;
+    if (viewerAccountId) {
+      this.accountsService.loadAccount(viewerAccountId).subscribe({
+        next: (account) => {
+          this.viewerAccount = account;
+        },
+      });
+    }
+
     this.activatedRoute.params.subscribe((params) => {
       const accountId = params['accountId'] as string;
       this.selectedAccount.setSelectedAccountId(accountId);
@@ -212,15 +222,15 @@ export class FeedComponent implements OnInit {
   }
 
   private getCurrentParticipant(): Participant | null {
-    if (!this.account) {
+    if (!this.viewerAccount) {
       return null;
     }
 
     return {
-      id: this.account.id,
-      firstName: this.account.firstName,
-      lastName: this.account.lastName,
-      nickName: this.account.userName,
+      id: this.viewerAccount.id,
+      firstName: this.viewerAccount.firstName,
+      lastName: this.viewerAccount.lastName,
+      nickName: this.viewerAccount.userName,
       isAdmin: false,
     };
   }
